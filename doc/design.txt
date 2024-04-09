@@ -1,0 +1,58 @@
+
+Post apocalyptic idea:
+Player stay unknowingly in a remote cabin in the wilderness while a doomsday apocalypse unfolds.
+Facing a world full of new dangers upon his return to civilization. Player goes on journey to find
+his missing family.
+
+
+Western revenge drama:
+Hero has to charge down a crime syndicate responsible for killing his wife/child/friend/dog whatever.
+Basically John Wick but set in the west. Could be set in some space western setting on a the frontier as well.
+
+
+Die hard:
+Player is ordinary Joe foiling a robbery/terrorist plot. Having to save hostages and shit
+
+
+Oregon Trail/Organ Trail/Final Station etc idea:
+Travel around and gather resources
+maintain central base, rescue survivors, keep them feed by going on missions to secure resources
+upgrade base
+base could be a large ship? sail to destinations and do away missions, keep survivors fed.
+ultimate goal find a safe haven by gathering clues.
+
+
+Mars:
+Player is a colonist. One day something goes terrible wrong. Maybe aliens attacked or something.
+Player has to fight his way to safety through a shitload of industrial locations.
+
+
+
+"scroller": {
+        "layers": [
+            {
+                "filename": "assets/backgrounds/mountains/back.png",
+                "foreground": false,
+                "height": 1080.0,
+                "offsetY": 1080.0,
+                "speed": 0.01,
+                "width": 1920.0
+            },
+            {
+                "filename": "assets/backgrounds/mountains/shadow.png",
+                "foreground": false,
+                "height": 1080.0,
+                "offsetY": 1080.0,
+                "speed": 0.25,
+                "width": 1920.0
+            },
+            {
+                "filename": "assets/backgrounds/mountains/back2.png",
+                "foreground": false,
+                "height": 1080.0,
+                "offsetY": 1080.0,
+                "speed": 0.5,
+                "width": 1920.0
+            }
+        ]
+    },
