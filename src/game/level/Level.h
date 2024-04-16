@@ -13,6 +13,7 @@
 
 #define MOVE_SPEED 5.0f
 using Renderer::MeshVertex;
+using Renderer::SpriteVertex;
 using Renderer::TextureAtlas;
 using Renderer::TextureAtlasBuilder;
 using Renderer::CubeFaces;
@@ -20,6 +21,7 @@ using Renderer::LevelRenderer;
 using Renderer::RenderBatch;
 using Renderer::BatchType;
 using Renderer::CubeSide;
+using Renderer::WallTexture;
 
 namespace Game {
     enum CellSide { NORTH, SOUTH, WEST, EAST };
@@ -111,8 +113,6 @@ namespace Game {
         i32 height;
         Player player;
         std::vector<u8> map;
-        std::vector<u8> blockedMap;
-        Lighting lighting;
         bool freeCam;
         float moveDuration;
         float turnDuration;

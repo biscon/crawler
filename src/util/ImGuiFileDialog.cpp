@@ -3952,7 +3952,7 @@ namespace IGFD
 
 					fdFilter.SetDefaultFilterIfNotDefined();
 
-					// init list of files
+					// create list of files
 					if (fdFile.IsFileListEmpty() && !fdFile.puShowDrives)
 					{
 						IGFD::Utils::ReplaceString(fdFile.puDLGDefaultFileName, fdFile.puDLGpath, ""); // local path

@@ -10,12 +10,14 @@
 #include <unordered_map>
 #include "defs.h"
 #include "VertexBuffer.h"
+#include <glm/glm.hpp>
 
 namespace Renderer {
     struct ModelVertex {
-        float position[3];
-        float textureCoords[2];
-        float normal[3];
+        glm::vec3 position;
+        glm::vec2 textureCoords;
+        glm::vec3 normal;
+        glm::vec3 tangent;
     };
 
     struct ModelObject {
@@ -28,10 +30,17 @@ namespace Renderer {
         std::shared_ptr<VertexBuffer> vbo;
         std::vector<ModelVertex> vertices;
         std::unordered_map<std::string, ModelObject> objects;
-        u32 textureId;
+        u32 diffuseMapId;
+        u32 normalMapId;
+        u32 specularMapId;
+        bool hasNormalMap;
+        bool hasSpecularMap;
     };
 
-    void LoadModel(Model &model, const std::string &filename, const std::string &textureFile);
+    void LoadModel(Model &model, const std::string &filename, bool generateTangents);
+    void LoadDiffuseMap(Model &model, const std::string &filename);
+    void LoadNormalMap(Model &model, const std::string &filename);
+    void LoadSpecularMap(Model &model, const std::string &filename);
     void DestroyModel(Model &model);
 }
 #endif //CRAWLER_MODEL_H

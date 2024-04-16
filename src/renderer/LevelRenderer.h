@@ -12,30 +12,59 @@
 #include "TextureAtlas.h"
 #include "Camera.h"
 #include "Model.h"
+#include "ShadowMapping.h"
+#include "frustum/ViewFrustum.h"
+#include "ArrayTexture.h"
 
 #define CUBE_SIZE 3.0f
+#define SHADOW_MAP_SIZE 1024
 
 namespace Renderer {
     enum CubeSide { NORTH, SOUTH, WEST, EAST, TOP, BOTTOM, CENTER};
+    enum WallTexture {
+        WALL,
+        FLOOR,
+        CEILING,
+        NONE,
+    };
 
     struct MeshVertex {
-        float position[3];
-        float textureCoords[2];
-        float color[3];
+        glm::vec3 position;
+        glm::vec3 textureCoords;
+        glm::vec3 normal;
+        glm::vec3 tangent;
+    };
+
+    struct SpriteVertex {
+        glm::vec3 position;
+        glm::vec2 textureCoords;
     };
 
     struct CubeFaces {
-        u32 front;
-        u32 back;
-        u32 left;
-        u32 right;
-        u32 top;
-        u32 bottom;
+        WallTexture front;
+        WallTexture back;
+        WallTexture left;
+        WallTexture right;
+        WallTexture top;
+        WallTexture bottom;
     };
 
     struct Light {
         glm::vec3 position;
+        glm::vec3 ambient;
         glm::vec3 diffuse;
+        glm::vec3 specular;
+        float linear;
+        float quadratic;
+        bool shadowEnabled;
+        u32 level;
+    };
+
+    struct RenderLight {
+        u32 lightIndex;
+        float distance;
+        bool shadowEnabled;
+        u32 level;
     };
 
     enum class BatchType {
@@ -49,6 +78,7 @@ namespace Renderer {
         u32 count;
         i32 billboarding;  // 0 = none, 1 = spherical, 2 = cylindrical
         glm::vec3 position;
+        glm::vec3 spriteNormal;
         glm::vec2 spriteSize;
         u32 modelIndex;
         float modelScale;
@@ -60,32 +90,38 @@ namespace Renderer {
     };
 
     struct LevelRenderer {
+        ViewFrustum frustum;
         std::unique_ptr<ShaderProgram> geometryShader;
         std::unique_ptr<VertexBuffer> geometryVbo;
-        TextureAtlas geometryTextureAtlas;
         std::vector<MeshVertex> geometryMesh;
 
         std::unique_ptr<ShaderProgram> spriteShader;
         std::unique_ptr<VertexBuffer> spriteVbo;
         TextureAtlas spriteTextureAtlas;
-        std::vector<MeshVertex> spriteMesh;
+        std::vector<SpriteVertex> spriteMesh;
 
         std::unique_ptr<ShaderProgram> modelShader;
 
+        std::unique_ptr<ShaderProgram> shadowShader;
+        std::unique_ptr<ShadowCubeMapFBO> shadowFbo1;
+        std::unique_ptr<ShadowCubeMapFBO> shadowFbo2;
+        std::unique_ptr<ShadowCubeMapFBO> shadowFbo3;
+        std::unique_ptr<ShadowCubeMapFBO> shadowFbo4;
+
         u32 fbo;
         u32 fboTexture;
-        u32 wallTexture;
-        u32 wallEndTexture;
-        u32 ceilingTexture;
-        u32 floorTexture;
-        u32 drainTexture;
-        u32 doorTexture;
+
+        ArrayTexture wallDiffuseMaps;
+        ArrayTexture wallNormalMaps;
+        ArrayTexture wallSpecularMaps;
 
         std::vector<RenderBatch> batches;
         std::unique_ptr<Camera> camera;
         std::vector<Model> models;
         std::vector<Light> lights;
+        std::vector<RenderLight> renderLights;
         u32 doorModelIndex;
+        u32 cellsRendered;
     };
 
     void InitLevelRenderer(LevelRenderer& r);
@@ -94,6 +130,8 @@ namespace Renderer {
     void RenderLevel(LevelRenderer& r, float delta);
     void UploadLevelMesh(LevelRenderer &r);
     u32 LoadModel(LevelRenderer &r, const std::string &filename, const std::string &textureFile);
+    u32 LoadModel(LevelRenderer &r, const std::string &filename, const std::string &diffuseFile, const std::string &normalFile);
+    u32 LoadModel(LevelRenderer &r, const std::string &filename, const std::string &diffuseFile, const std::string &normalFile, const std::string &specularFile);
 }
 
 #endif //CRAWLER_LEVELRENDERER_H

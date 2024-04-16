@@ -61,6 +61,10 @@ namespace Renderer {
         }
     }
 
+    void SetViewport() {
+        glViewport(viewport.current.x, viewport.current.y, viewport.current.w, viewport.current.h);
+    }
+
     Viewport &GetViewport() {
         return viewport;
     }

@@ -164,8 +164,8 @@ INTERNAL bool InitVideo()
 {
     // request a GL Context 3.3 core profile
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     // stencil size 8, so far we don't use it
     //SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     //SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
@@ -387,6 +387,8 @@ int main()
         //SDL_Log("engineTimer: %f", engineTimer);
 
         Game::UpdateGame(*gameContext, (float) secondsElapsedForFrame);
+
+        //ImGui::ShowDemoWindow(nullptr);
 
         // ImGui Rendering
         ImGui::Render();

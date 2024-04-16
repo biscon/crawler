@@ -8233,14 +8233,14 @@ class lexer : public lexer_base<BasicJsonType>
     This function scans a string according to Sect. 6 of RFC 8259.
 
     The function is realized with a deterministic finite state machine derived
-    from the grammar described in RFC 8259. Starting in state "init", the
+    from the grammar described in RFC 8259. Starting in state "create", the
     input is read and used to determined the next state. Only state "done"
     accepts the number. State "error" is a trap state to model errors. In the
     table below, "anything" means any character but the ones listed before.
 
     state    | 0        | 1-9      | e E      | +       | -       | .        | anything
     ---------|----------|----------|----------|---------|---------|----------|-----------
-    init     | zero     | any1     | [error]  | [error] | minus   | [error]  | [error]
+    create     | zero     | any1     | [error]  | [error] | minus   | [error]  | [error]
     minus    | zero     | any1     | [error]  | [error] | [error] | [error]  | [error]
     zero     | done     | done     | exponent | done    | done    | decimal1 | done
     any1     | any1     | any1     | exponent | done    | done    | decimal1 | done
@@ -8276,7 +8276,7 @@ class lexer : public lexer_base<BasicJsonType>
         // changed if minus sign, decimal point or exponent is read
         token_type number_type = token_type::value_unsigned;
 
-        // state (init): we just found out we need to scan a number
+        // state (create): we just found out we need to scan a number
         switch (current)
         {
             case '-':

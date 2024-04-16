@@ -20,6 +20,7 @@ namespace Game {
         Level level;
         Renderer::Font font;
         bool quitFlag;
+        bool debugFlag;
 
         /*
         u32 animId;

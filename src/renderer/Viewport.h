@@ -18,5 +18,6 @@ namespace Renderer {
     void InitViewport(u32 width, u32 height);
     void SizeChangedViewport(u32 newWidth, u32 newHeight);
     Viewport& GetViewport();
+    void SetViewport();
 }
 #endif //DOD_VIEWPORT_H

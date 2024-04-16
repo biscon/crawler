@@ -87,6 +87,8 @@ set(ENGINE_SOURCE_FILES
         src/renderer/FrameBuffer.h
         src/renderer/Texture.cpp
         src/renderer/Texture.h
+        src/renderer/ArrayTexture.cpp
+        src/renderer/ArrayTexture.h
         src/renderer/TextureAtlas.cpp
         src/renderer/TextureAtlas.h
         src/renderer/Viewport.cpp
@@ -100,6 +102,16 @@ set(ENGINE_SOURCE_FILES
         src/renderer/Camera.h
         src/renderer/Model.cpp
         src/renderer/Model.h
+        src/renderer/ShadowMapping.cpp
+        src/renderer/ShadowMapping.h
+        src/renderer/frustum/AABox.h
+        src/renderer/frustum/AABox.cpp
+        src/renderer/frustum/Plane.h
+        src/renderer/frustum/Plane.cpp
+        src/renderer/frustum/Vec3.h
+        src/renderer/frustum/Vec3.cpp
+        src/renderer/frustum/ViewFrustum.h
+        src/renderer/frustum/ViewFrustum.cpp
 )
 
 set(GAME_SOURCE_FILES

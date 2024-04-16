@@ -565,11 +565,11 @@ ImGuiFileDialog::Instance()->SetCreateThumbnailCallback([](IGFD_Thumbnail_Info *
 		vThumbnail_Info->isReadyToUpload &&
 		vThumbnail_Info->textureFileDatas)
 	{
-		GLuint textureId = 0;
-		glGenTextures(1, &textureId);
-		vThumbnail_Info->textureID = (void*)textureId;
+		GLuint diffuseMapId = 0;
+		glGenTextures(1, &diffuseMapId);
+		vThumbnail_Info->textureID = (void*)diffuseMapId;
 
-		glBindTexture(GL_TEXTURE_2D, textureId);
+		glBindTexture(GL_TEXTURE_2D, diffuseMapId);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

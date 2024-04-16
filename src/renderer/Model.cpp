@@ -92,7 +92,40 @@ namespace Renderer {
         }
     }
 
-    void LoadModel(Model &model, const std::string &filename, const std::string &textureFile) {
+    static void calculateGeometryTangents(std::vector<ModelVertex>& vertices) {
+        for(i32 i = 0 ; i < vertices.size(); i += 3) {
+            ModelVertex& v0 = vertices[i];
+            ModelVertex& v1 = vertices[i+1];
+            ModelVertex& v2 = vertices[i+2];
+
+            glm::vec3 Edge1 = v1.position - v0.position;
+            glm::vec3 Edge2 = v2.position - v0.position;
+
+            float DeltaU1 = v1.textureCoords.x - v0.textureCoords.x;
+            float DeltaV1 = v1.textureCoords.y - v0.textureCoords.y;
+            float DeltaU2 = v2.textureCoords.x - v0.textureCoords.x;
+            float DeltaV2 = v2.textureCoords.y - v0.textureCoords.y;
+
+            float f = 1.0f / (DeltaU1 * DeltaV2 - DeltaU2 * DeltaV1);
+
+            glm::vec3 Tangent;
+            Tangent.x = f * (DeltaV2 * Edge1.x - DeltaV1 * Edge2.x);
+            Tangent.y = f * (DeltaV2 * Edge1.y - DeltaV1 * Edge2.y);
+            Tangent.z = f * (DeltaV2 * Edge1.z - DeltaV1 * Edge2.z);
+
+            Tangent = glm::normalize(Tangent);
+            v0.tangent = Tangent;
+            v1.tangent = Tangent;
+            v2.tangent = Tangent;
+        }
+    }
+
+    void LoadModel(Model &model, const std::string &filename, bool generateTangents) {
+        model.hasNormalMap = false;
+        model.hasSpecularMap = false;
+        model.diffuseMapId = 0;
+        model.normalMapId = 0;
+        model.specularMapId = 0;
         model.vertices.clear();
         reader_config.mtl_search_path = "./assets/models"; // Path to material files
         tinyobj::ObjReader reader;
@@ -142,7 +175,6 @@ namespace Renderer {
                     modelVertex.position[1] = vy;
                     modelVertex.position[2] = vz;
                     // Check if `normal_index` is zero or positive. negative = no normal data
-
                     if (idx.normal_index >= 0) {
                         tinyobj::real_t nx = attrib.normals[3 * size_t(idx.normal_index) + 0];
                         tinyobj::real_t ny = attrib.normals[3 * size_t(idx.normal_index) + 1];
@@ -192,23 +224,45 @@ namespace Renderer {
         smoothNormals(model.vertices);
          */
 
-        SDL_Log("Calculated normals for %zu vertices", model.vertices.size());
-
-        model.textureId = CreateTexture();
-        LoadTextureFromPng(model.textureId, textureFile, false);
-        SetFilteringTexture(model.textureId, TextureFiltering::NEAREST);
-        GenerateTextureMipmaps(model.textureId);
+        if(generateTangents) {
+            calculateGeometryTangents(model.vertices);
+            SDL_Log("Generated tangents");
+        }
 
         // vbo
         VertexAttributes attrs;
         attrs.add(0, 3, VertexAttributeType::Float); // position
         attrs.add(1, 2, VertexAttributeType::Float); // tex coords
         attrs.add(2, 3, VertexAttributeType::Float); // normals
+        attrs.add(3, 3, VertexAttributeType::Float); // tangents
         model.vbo = std::make_shared<VertexBuffer>(attrs);
         model.vbo->allocate(model.vertices.data(), model.vertices.size() * sizeof(ModelVertex), VertexAccessType::STATIC);
     }
 
     void DestroyModel(Model &model) {
-        DestroyTexture(model.textureId);
+        DestroyTexture(model.diffuseMapId);
+    }
+
+    void LoadDiffuseMap(Model &model, const std::string &filename) {
+        model.diffuseMapId = CreateTexture();
+        LoadTextureFromPng(model.diffuseMapId, filename, false);
+        SetFilteringTexture(model.diffuseMapId, TextureFiltering::LINEAR_MIPMAP);
+        GenerateTextureMipmaps(model.diffuseMapId);
+    }
+
+    void LoadNormalMap(Model &model, const std::string &filename) {
+        model.normalMapId = CreateTexture();
+        LoadTextureFromPng(model.normalMapId, filename, false);
+        SetFilteringTexture(model.normalMapId, TextureFiltering::LINEAR_MIPMAP);
+        GenerateTextureMipmaps(model.normalMapId);
+        model.hasNormalMap = true;
+    }
+
+    void LoadSpecularMap(Model &model, const std::string &filename) {
+        model.specularMapId = CreateTexture();
+        LoadTextureFromPng(model.specularMapId, filename, false);
+        SetFilteringTexture(model.specularMapId, TextureFiltering::NEAREST_MIPMAP);
+        GenerateTextureMipmaps(model.specularMapId);
+        model.hasSpecularMap = true;
     }
 }

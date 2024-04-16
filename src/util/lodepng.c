@@ -129,7 +129,7 @@ About uivector, ucvector and string:
 -LodePNG was originally written in C++. The vectors replace the std::vectors that were used in the C++ version.
 -The string tools are made to avoid problems with compilers that declare things like strncat as deprecated.
 -They're not used in the interface, only internally in this file as static functions.
--As with many other structs in this file, the init and cleanup functions serve as ctor and dtor.
+-As with many other structs in this file, the create and cleanup functions serve as ctor and dtor.
 */
 
 #ifdef LODEPNG_COMPILE_ZLIB
@@ -287,7 +287,7 @@ static unsigned string_resize(char** out, size_t size)
   return data != 0;
 }
 
-/*init a {char*, size_t} pair for use as string*/
+/*create a {char*, size_t} pair for use as string*/
 static void string_init(char** out)
 {
   *out = NULL;

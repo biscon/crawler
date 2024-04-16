@@ -25,6 +25,8 @@ namespace Renderer {
     enum class TextureFiltering {
         NEAREST,
         LINEAR,
+        NEAREST_MIPMAP,
+        LINEAR_MIPMAP,
     };
 
     u32 CreateTexture();

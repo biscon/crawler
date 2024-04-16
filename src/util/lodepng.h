@@ -356,7 +356,7 @@ typedef struct LodePNGColorMode
   unsigned key_b;       /*blue component of color key*/
 } LodePNGColorMode;
 
-/*init, cleanup and copy functions to use with this struct*/
+/*create, cleanup and copy functions to use with this struct*/
 void lodepng_color_mode_init(LodePNGColorMode* info);
 void lodepng_color_mode_cleanup(LodePNGColorMode* info);
 /*return value is error code (0 means no error)*/
@@ -441,7 +441,7 @@ typedef struct LodePNGInfo
   A keyword is minimum 1 character and maximum 79 characters long. It's
   discouraged to use a single line length longer than 79 characters for texts.
 
-  Don't allocate these text buffers yourself. Use the init/cleanup functions
+  Don't allocate these text buffers yourself. Use the create/cleanup functions
   correctly and use lodepng_add_text and lodepng_clear_text.
   */
   size_t text_num; /*the amount of texts in these char** buffers (there may be more texts in itext)*/
@@ -483,7 +483,7 @@ typedef struct LodePNGInfo
 #endif /*LODEPNG_COMPILE_ANCILLARY_CHUNKS*/
 } LodePNGInfo;
 
-/*init, cleanup and copy functions to use with this struct*/
+/*create, cleanup and copy functions to use with this struct*/
 void lodepng_info_init(LodePNGInfo* info);
 void lodepng_info_cleanup(LodePNGInfo* info);
 /*return value is error code (0 means no error)*/
@@ -638,7 +638,7 @@ typedef struct LodePNGState
 #endif
 } LodePNGState;
 
-/*init, cleanup and copy functions to use with this struct*/
+/*create, cleanup and copy functions to use with this struct*/
 void lodepng_state_init(LodePNGState* state);
 void lodepng_state_cleanup(LodePNGState* state);
 void lodepng_state_copy(LodePNGState* dest, const LodePNGState* source);
@@ -1054,7 +1054,7 @@ When using LodePNG, care has to be taken with the C version of LodePNG, as well
 as the C-style structs when working with C++. The following conventions are used
 for all C-style structs:
 
--if a struct has a corresponding init function, always call the init function when making a new one
+-if a struct has a corresponding init function, always call the create function when making a new one
 -if a struct has a corresponding cleanup function, call it before the struct disappears to avoid memory leaks
 -if a struct has a corresponding copy function, use the copy function instead of "=".
  The destination must also be inited already.

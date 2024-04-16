@@ -10,104 +10,91 @@
 #include <glm/gtx/rotate_vector.hpp>
 
 namespace Game {
-    static void meshCell(Level& r, float x, float y, float z, CubeFaces& faces, std::vector<MeshVertex>& vertices, TextureAtlas& atlas, i32 mapX, i32 mapY) {
+    static void meshCell(Level& r, float x, float y, float z, CubeFaces& faces, std::vector<MeshVertex>& vertices) {
         // Calculate half size for centering
         float halfSize = CUBE_SIZE / 2.0f;
 
-        glm::vec3 tl;
-        glm::vec3 tr;
-        glm::vec3 bl;
-        glm::vec3 br;
-
-        SetLightColorLeft_FB(r.lighting, mapX, mapY, tl);
-        SetLightColorRight_FB(r.lighting, mapX, mapY, tr);
-        SetLightColorLeft_FB(r.lighting, mapX, mapY, bl);
-        SetLightColorRight_FB(r.lighting, mapX, mapY, br);
-
+        glm::vec3 n;
+        auto uvRect = FloatRect(0.0f, 0.0f, 1.0f, 1.0f);
         // Front face
-        if (faces.front) {
-            auto uvRect = atlas.uvRects[faces.front];
-            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.left, uvRect.bottom}, {bl.r, bl.g, bl.b}});
-            vertices.emplace_back(MeshVertex{{halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.right, uvRect.bottom}, {br.r, br.g, br.b}});
-            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, -halfSize + z}, {uvRect.right, uvRect.top}, {tr.r, tr.g, tr.b}});
-            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, -halfSize + z}, {uvRect.right, uvRect.top}, {tr.r, tr.g, tr.b}});
-            vertices.emplace_back(MeshVertex{{-halfSize + x, halfSize + y, -halfSize + z}, {uvRect.left, uvRect.top}, {tl.r, tl.g, tl.b}});
-            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.left, uvRect.bottom}, {bl.r, bl.g, bl.b}});
+        if (faces.front != WallTexture::NONE) {
+            n = glm::vec3(0.0f, 0.0f, 1.0f);
+            auto l = (float) faces.front;
+
+            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.left, uvRect.bottom, l}, n});
+            vertices.emplace_back(MeshVertex{{halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.right, uvRect.bottom, l}, n});
+            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, -halfSize + z}, {uvRect.right, uvRect.top, l}, n});
+            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, -halfSize + z}, {uvRect.right, uvRect.top, l}, n});
+            vertices.emplace_back(MeshVertex{{-halfSize + x, halfSize + y, -halfSize + z}, {uvRect.left, uvRect.top, l}, n});
+            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.left, uvRect.bottom, l}, n});
         }
 
         // Back face
-        if (faces.back) {
-            auto uvRect = atlas.uvRects[faces.back];
-            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, halfSize + z}, {uvRect.left, uvRect.bottom}, {bl.r, bl.g, bl.b}});
-            vertices.emplace_back(MeshVertex{{halfSize + x, -halfSize + y, halfSize + z}, {uvRect.right, uvRect.bottom}, {br.r, br.g, br.b}});
-            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, halfSize + z}, {uvRect.right, uvRect.top}, {tr.r, tr.g, tr.b}});
-            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, halfSize + z}, {uvRect.right, uvRect.top}, {tr.r, tr.g, tr.b}});
-            vertices.emplace_back(MeshVertex{{-halfSize + x, halfSize + y, halfSize + z}, {uvRect.left, uvRect.top}, {tl.r, tl.g, tl.b}});
-            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, halfSize + z}, {uvRect.left, uvRect.bottom}, {bl.r, bl.g, bl.b}});
+        if (faces.back != WallTexture::NONE) {
+            n = glm::vec3(0.0f, 0.0f, -1.0f);
+            auto l = (float) faces.back;
+            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, halfSize + z}, {uvRect.left, uvRect.bottom, l}, n});
+            vertices.emplace_back(MeshVertex{{-halfSize + x, halfSize + y, halfSize + z}, {uvRect.left, uvRect.top, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, halfSize + z}, {uvRect.right, uvRect.top, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, halfSize + z}, {uvRect.right, uvRect.top, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{halfSize + x, -halfSize + y, halfSize + z}, {uvRect.right, uvRect.bottom, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, halfSize + z}, {uvRect.left, uvRect.bottom, l}, {n.x, n.y, n.z}});
         }
 
-        SetLightColorLeft_LR(r.lighting, mapX, mapY, tl);
-        SetLightColorRight_LR(r.lighting, mapX, mapY, tr);
-        SetLightColorLeft_LR(r.lighting, mapX, mapY, bl);
-        SetLightColorRight_LR(r.lighting, mapX, mapY, br);
-
         // Left face
-        if (faces.left) {
-            auto uvRect = atlas.uvRects[faces.left];
-            vertices.emplace_back(MeshVertex{{-halfSize + x, halfSize + y, halfSize + z}, {uvRect.left, uvRect.top}, {tl.r, tl.g, tl.b}});
-            vertices.emplace_back(MeshVertex{{-halfSize + x, halfSize + y, -halfSize + z}, {uvRect.right, uvRect.top}, {tr.r, tr.g, tr.b}});
-            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.right, uvRect.bottom}, {br.r, br.g, br.b}});
-            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.right, uvRect.bottom}, {br.r, br.g, br.b}});
-            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, halfSize + z}, {uvRect.left, uvRect.bottom}, {bl.r, bl.g, bl.b}});
-            vertices.emplace_back(MeshVertex{{-halfSize + x, halfSize + y, halfSize + z}, {uvRect.left, uvRect.top}, {tl.r, tl.g, tl.b}});
+        if (faces.left != WallTexture::NONE) {
+            n = glm::vec3(1.0f, 0.0f, 0.0f);
+            auto l = (float) faces.left;
+            vertices.emplace_back(MeshVertex{{-halfSize + x, halfSize + y, halfSize + z}, {uvRect.left, uvRect.top, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, halfSize + z}, {uvRect.left, uvRect.bottom, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.right, uvRect.bottom, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.right, uvRect.bottom, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{-halfSize + x, halfSize + y, -halfSize + z}, {uvRect.right, uvRect.top, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{-halfSize + x, halfSize + y, halfSize + z}, {uvRect.left, uvRect.top, l}, {n.x, n.y, n.z}});
         }
 
         // Right face
-        if (faces.right) {
-            auto uvRect = atlas.uvRects[faces.right];
-            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, halfSize + z}, {uvRect.left, uvRect.top}, {tl.r, tl.g, tl.b}});
-            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, -halfSize + z}, {uvRect.right, uvRect.top}, {tr.r, tr.g, tr.b}});
-            vertices.emplace_back(MeshVertex{{halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.right, uvRect.bottom}, {br.r, br.g, br.b}});
-            vertices.emplace_back(MeshVertex{{halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.right, uvRect.bottom}, {br.r, br.g, br.b}});
-            vertices.emplace_back(MeshVertex{{halfSize + x, -halfSize + y, halfSize + z}, {uvRect.left, uvRect.bottom}, {bl.r, bl.g, bl.b}});
-            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, halfSize + z}, {uvRect.left, uvRect.top}, {tl.r, tl.g, tl.b}});
+        if (faces.right != WallTexture::NONE) {
+            n = glm::vec3(-1.0f, 0.0f, 0.0f);
+            auto l = (float) faces.right;
+            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, halfSize + z}, {uvRect.left, uvRect.top, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, -halfSize + z}, {uvRect.right, uvRect.top, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.right, uvRect.bottom, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.right, uvRect.bottom, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{halfSize + x, -halfSize + y, halfSize + z}, {uvRect.left, uvRect.bottom, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, halfSize + z}, {uvRect.left, uvRect.top, l}, {n.x, n.y, n.z}});
         }
 
-        SetLightColorTopLeft_TB(r.lighting, mapX, mapY, tl);
-        SetLightColorTopRight_TB(r.lighting, mapX, mapY, tr);
-        SetLightColorBottomLeft_TB(r.lighting, mapX, mapY, bl);
-        SetLightColorBottomRight_TB(r.lighting, mapX, mapY, br);
-
         // Bottom face
-        if (faces.bottom) {
-            auto uvRect = atlas.uvRects[faces.bottom];
-            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.left, uvRect.top}, {tl.r, tl.g, tl.b}});
-            vertices.emplace_back(MeshVertex{{halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.right, uvRect.top}, {tr.r, tr.g, tr.b}});
-            vertices.emplace_back(MeshVertex{{halfSize + x, -halfSize + y, halfSize + z}, {uvRect.right, uvRect.bottom}, {br.r, br.g, br.b}});
-            vertices.emplace_back(MeshVertex{{halfSize + x, -halfSize + y, halfSize + z}, {uvRect.right, uvRect.bottom}, {br.r, br.g, br.b}});
-            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, halfSize + z}, {uvRect.left, uvRect.bottom}, {bl.r, bl.g, bl.b}});
-            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.left, uvRect.top}, {tl.r, tl.g, tl.b}});
+        if (faces.bottom != WallTexture::NONE) {
+            n = glm::vec3(0.0f, 1.0f, 0.0f);
+            auto l = (float) faces.bottom;
+            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.left, uvRect.top, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, halfSize + z}, {uvRect.left, uvRect.bottom, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{halfSize + x, -halfSize + y, halfSize + z}, {uvRect.right, uvRect.bottom, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{halfSize + x, -halfSize + y, halfSize + z}, {uvRect.right, uvRect.bottom, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.right, uvRect.top, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{-halfSize + x, -halfSize + y, -halfSize + z}, {uvRect.left, uvRect.top, l}, {n.x, n.y, n.z}});
         }
 
         // Top face
-        if (faces.top) {
-            auto uvRect = atlas.uvRects[faces.top];
-            vertices.emplace_back(MeshVertex{{-halfSize + x, halfSize + y, -halfSize + z}, {uvRect.left, uvRect.top}, {tl.r, tl.g, tl.b}});
-            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, -halfSize + z}, {uvRect.right, uvRect.top}, {tr.r, tr.g, tr.b}});
-            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, halfSize + z}, {uvRect.right, uvRect.bottom}, {br.r, br.g, br.b}});
-            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, halfSize + z}, {uvRect.right, uvRect.bottom}, {br.r, br.g, br.b}});
-            vertices.emplace_back(MeshVertex{{-halfSize + x, halfSize + y, halfSize + z}, {uvRect.left, uvRect.bottom}, {bl.r, bl.g, bl.b}});
-            vertices.emplace_back(MeshVertex{{-halfSize + x, halfSize + y, -halfSize + z}, {uvRect.left, uvRect.top}, {tl.r, tl.g, tl.b}});
+        if (faces.top != WallTexture::NONE) {
+            n = glm::vec3(0.0f, -1.0f, 0.0f);
+            auto l = (float) faces.top;
+            vertices.emplace_back(MeshVertex{{-halfSize + x, halfSize + y, -halfSize + z}, {uvRect.left, uvRect.top, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, -halfSize + z}, {uvRect.right, uvRect.top, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, halfSize + z}, {uvRect.right, uvRect.bottom, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{halfSize + x, halfSize + y, halfSize + z}, {uvRect.right, uvRect.bottom, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{-halfSize + x, halfSize + y, halfSize + z}, {uvRect.left, uvRect.bottom, l}, {n.x, n.y, n.z}});
+            vertices.emplace_back(MeshVertex{{-halfSize + x, halfSize + y, -halfSize + z}, {uvRect.left, uvRect.top, l}, {n.x, n.y, n.z}});
         }
     }
     
-    static u32 charToWallTexture(Renderer::LevelRenderer& r, u8 c) {
+    static WallTexture charToWallTexture(LevelRenderer& r, u8 c) {
         switch(c) {
-            case '#': return r.wallTexture;
-            case 'E': return r.wallEndTexture;
-            case 'O': return r.drainTexture;
+            case '#': return WallTexture::WALL;
         }
-        return 0;
+        return WallTexture::NONE;
     }
 
     static bool isOpenCell(Level &l, i32 x, i32 y) {
@@ -137,15 +124,15 @@ namespace Game {
         faces.top = (aboveCell == '#') ? 1 : 0;
         faces.bottom = (belowCell == '#') ? 1 : 0;
          */
-        faces.top = r.ceilingTexture;
-        faces.bottom = r.floorTexture;
+        faces.top = WallTexture::CEILING;
+        faces.bottom = WallTexture::FLOOR;
         faces.left = charToWallTexture(r, leftCell);
         faces.right = charToWallTexture(r, rightCell);
         faces.front = charToWallTexture(r, frontCell);
         faces.back = charToWallTexture(r, backCell);
 
         // Call meshCell function
-        meshCell(l, dso.worldPosition.x, dso.worldPosition.y, dso.worldPosition.z, faces, r.geometryMesh, r.geometryTextureAtlas, x, y);
+        meshCell(l, dso.worldPosition.x, dso.worldPosition.y, dso.worldPosition.z, faces, r.geometryMesh);
     }
 
     static void normalizeResolution(int width, int height, float scale, float* normalizedWidth, float* normalizedHeight) {
@@ -217,24 +204,22 @@ namespace Game {
 
         // Front face
         auto uvRect = r.spriteTextureAtlas.uvRects[texture];
-        glm::vec3 c;
-        GetLightColorAt(l.lighting, dso.mapX, dso.mapY, c);
 
         if(axis == CellAxis::CELL_AXIS_XY) {
-            r.spriteMesh.emplace_back(MeshVertex{{-halfWidth + x, -halfHeight + y, z}, {uvRect.left, uvRect.bottom}, {c.r, c.g, c.b}});
-            r.spriteMesh.emplace_back(MeshVertex{{-halfWidth + x, halfHeight + y, z}, {uvRect.left, uvRect.top}, {c.r, c.g, c.b}});
-            r.spriteMesh.emplace_back(MeshVertex{{halfWidth + x, halfHeight + y, z}, {uvRect.right, uvRect.top}, {c.r, c.g, c.b}});
-            r.spriteMesh.emplace_back(MeshVertex{{halfWidth + x, halfHeight + y, z}, {uvRect.right, uvRect.top}, {c.r, c.g, c.b}});
-            r.spriteMesh.emplace_back(MeshVertex{{halfWidth + x, -halfHeight + y, z}, {uvRect.right, uvRect.bottom}, {c.r, c.g, c.b}});
-            r.spriteMesh.emplace_back(MeshVertex{{-halfWidth + x, -halfHeight + y, z}, {uvRect.left, uvRect.bottom}, {c.r, c.g, c.b}});
+            r.spriteMesh.emplace_back(SpriteVertex{{-halfWidth + x, -halfHeight + y, z}, {uvRect.left, uvRect.bottom}});
+            r.spriteMesh.emplace_back(SpriteVertex{{-halfWidth + x, halfHeight + y, z}, {uvRect.left, uvRect.top}});
+            r.spriteMesh.emplace_back(SpriteVertex{{halfWidth + x, halfHeight + y, z}, {uvRect.right, uvRect.top}});
+            r.spriteMesh.emplace_back(SpriteVertex{{halfWidth + x, halfHeight + y, z}, {uvRect.right, uvRect.top}});
+            r.spriteMesh.emplace_back(SpriteVertex{{halfWidth + x, -halfHeight + y, z}, {uvRect.right, uvRect.bottom}});
+            r.spriteMesh.emplace_back(SpriteVertex{{-halfWidth + x, -halfHeight + y, z}, {uvRect.left, uvRect.bottom}});
         }
         if(axis == CellAxis::CELL_AXIS_ZY) { // rotated 90 degrees about the y axis
-            r.spriteMesh.emplace_back(MeshVertex{{x, -halfHeight + y, halfWidth + z}, {uvRect.left, uvRect.bottom}, {c.r, c.g, c.b}});
-            r.spriteMesh.emplace_back(MeshVertex{{x, halfHeight + y, halfWidth + z}, {uvRect.left, uvRect.top}, {c.r, c.g, c.b}});
-            r.spriteMesh.emplace_back(MeshVertex{{x, halfHeight + y, -halfWidth + z}, {uvRect.right, uvRect.top}, {c.r, c.g, c.b}});
-            r.spriteMesh.emplace_back(MeshVertex{{x, halfHeight + y, -halfWidth + z}, {uvRect.right, uvRect.top}, {c.r, c.g, c.b}});
-            r.spriteMesh.emplace_back(MeshVertex{{x, -halfHeight + y, -halfWidth + z}, {uvRect.right, uvRect.bottom}, {c.r, c.g, c.b}});
-            r.spriteMesh.emplace_back(MeshVertex{{x, -halfHeight + y, halfWidth + z}, {uvRect.left, uvRect.bottom}, {c.r, c.g, c.b}});
+            r.spriteMesh.emplace_back(SpriteVertex{{x, -halfHeight + y, halfWidth + z}, {uvRect.left, uvRect.bottom}});
+            r.spriteMesh.emplace_back(SpriteVertex{{x, halfHeight + y, halfWidth + z}, {uvRect.left, uvRect.top}});
+            r.spriteMesh.emplace_back(SpriteVertex{{x, halfHeight + y, -halfWidth + z}, {uvRect.right, uvRect.top}});
+            r.spriteMesh.emplace_back(SpriteVertex{{x, halfHeight + y, -halfWidth + z}, {uvRect.right, uvRect.top}});
+            r.spriteMesh.emplace_back(SpriteVertex{{x, -halfHeight + y, -halfWidth + z}, {uvRect.right, uvRect.bottom}});
+            r.spriteMesh.emplace_back(SpriteVertex{{x, -halfHeight + y, halfWidth + z}, {uvRect.left, uvRect.bottom}});
         }
     }
 
@@ -273,14 +258,21 @@ namespace Game {
                     l.depthSortedObjects.push_back(depthSortedObject);
                 }
                 // add lights
-                if(currentCell == 'L') {
+                if(std::isdigit(currentCell)) {
+                    i32 level = currentCell - '0';
                     Renderer::Light light{};
-                    light.position = glm::vec3(((float) x) * CUBE_SIZE, CUBE_SIZE, ((float) y) * CUBE_SIZE);
-                    light.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+                    light.level = level;
+                    light.position = glm::vec3(((float) x) * CUBE_SIZE, CUBE_SIZE / 4.0f, ((float) y) * CUBE_SIZE);
+                    GetLightByLevel(light, level);
+                    light.shadowEnabled = level >= 2;
                     r.lights.push_back(light);
                 }
             }
         }
+        //SDL_Log("Camera at %f, %f, %f\n", r.camera->Position.x, r.camera->Position.y, r.camera->Position.z);
+        //r.lights[0].position = r.camera->Position;
+        //r.lights[0].position.y = 1.25f;
+
         // add monsters
         for(auto& m : l.monsters) {
             auto depthSortedObject = DepthSortedObject{};
@@ -343,6 +335,7 @@ namespace Game {
                     RenderBatch batch{};
                     batch.type = BatchType::GEOMETRY;
                     batch.offset = r.geometryMesh.size();
+                    batch.position = dso.worldPosition;
                     buildCellMesh(l, r, dso);
                     batch.count = r.geometryMesh.size() - batch.offset;
                     r.batches.push_back(batch);
@@ -356,6 +349,7 @@ namespace Game {
 
                     batch.position = dso.worldPosition;
                     batch.spriteSize = dso.sprite->size;
+                    batch.spriteNormal = glm::vec3(dso.sprite->direction.x, 0.0f, dso.sprite->direction.y);
                     auto side = CellSide::NORTH;
                     if(!dso.sprite->uniDirectional) {
                         side = getFacingSide(r.camera->Front, dso.sprite->direction);
@@ -384,7 +378,6 @@ namespace Game {
                     frameBatch.modelObjName = "frame";
                     frameBatch.transform = glm::vec3(0.0f, 0.0f, 0.0f);
                     frameBatch.rotation = rotation;
-                    GetLightColorAt(l.lighting, dso.mapX, dso.mapY, frameBatch.lightColor);
                     r.batches.push_back(frameBatch);
                     // door
                     RenderBatch doorBatch{};
@@ -396,7 +389,6 @@ namespace Game {
                     doorBatch.modelObjName = "door";
                     doorBatch.transform = glm::vec3(0.0f, dso.door->offsetY, 0.0f);
                     doorBatch.rotation = rotation;
-                    GetLightColorAt(l.lighting, dso.mapX, dso.mapY, doorBatch.lightColor);
                     r.batches.push_back(doorBatch);
                     break;
                 }
@@ -408,7 +400,6 @@ namespace Game {
                     batch.modelScale = dso.model->scale;
                     batch.modelAlignSide = dso.model->alignSide;
                     batch.modelObjName = "*";
-                    GetLightColorAt(l.lighting, dso.mapX, dso.mapY, batch.lightColor);
                     r.batches.push_back(batch);
                     break;
                 }
@@ -589,12 +580,9 @@ namespace Game {
         level.moveDuration = 0.35f;
         level.turnDuration = 0.25f;
         auto mapSize = level.width * level.height;
-        InitLighting(level.lighting, level.width, level.height);
         
         level.map.clear();
         level.map.resize(mapSize);
-        level.blockedMap.clear();
-        level.blockedMap.resize(mapSize);
         // copy map
         for (i32 i = 0; i < mapSize; i++) {
             level.map[i] = map[i];
@@ -603,7 +591,7 @@ namespace Game {
         auto builder = Renderer::TextureAtlasBuilder(1024, 1024, Renderer::PixelFormat::RGBA);
         loadMonsterBluePrints(level, renderer, builder);
         loadObjectBluePrints(level, renderer, builder);
-        renderer.doorTexture = builder.addFromPng("assets/eye_door.png", true);
+
         builder.build(renderer.spriteTextureAtlas);
         spawnDoors(level, renderer.doorModelIndex);
         spawnMonsters(level);
@@ -651,37 +639,17 @@ namespace Game {
         }
     }
 
-    static void updateBlockedMap(Level &l) {
-        l.blockedMap.clear();
-        for (int y = 0; y < l.height; y++) {
-            for (int x = 0; x < l.width; x++) {
-                if(isOpenCell(l, x, y)) {
-                    l.blockedMap[y * l.width + x] = 0;
-                } else {
-                    l.blockedMap[y * l.width + x] = 1;
-                }
-            }
-        }
-        /*
-        for(auto& d : l.doors) {
-            if(!d.open) {
-                l.blockedMap[d.y * l.width + d.x] = 1;
-            } else {
-                l.blockedMap[d.y * l.width + d.x] = 0;
-            }
-        }
-        */
-    }
 
     void UpdateLevel(Level &level, LevelRenderer& renderer, float delta) {
+        if(!level.freeCam) {
+            renderer.camera->Position.y = 0.25f;
+        }
         updateDoors(level, renderer, delta);
         if(!level.freeCam) {
             //adjustCamera(level, renderer);
         }
         renderer.geometryMesh.clear();
         renderer.spriteMesh.clear();
-        updateBlockedMap(level);
-        BuildLightMap(level.lighting, level.map.data(), level.blockedMap.data());
         buildMapMesh(level, renderer);
         UploadLevelMesh(renderer);
     }
@@ -724,11 +692,6 @@ namespace Game {
         c.AnimateMove(Camera_Movement::TURN_LEFT, level.turnDuration, 0.0f);
         level.player.direction = glm::rotate(level.player.direction, glm::radians(-90.0f));
         SDL_Log("Player direction: %f, %f\n", level.player.direction.x, level.player.direction.y);
-        // Light level at player
-        i32 count = 0;
-        auto lightLevel = GetLightLevelAt(level.lighting, level.player.x, level.player.y, count);
-        SDL_Log("Light level at player: %f\n", lightLevel);
-
     }
 
     void TurnRight(Level &level, Camera& c) {

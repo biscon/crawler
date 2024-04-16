@@ -7,6 +7,8 @@
 #include <SDL_mouse.h>
 #include "Game.h"
 #include "../input/SDLInput.h"
+#include "imgui.h"
+#include "../util/string_util.h"
 
 namespace Game {
 
@@ -24,34 +26,34 @@ namespace Game {
 
     const u8 testMap1[] = {
             '#','#','#','#','#','#','#','#','#',
-            '#',' ','L',' ','L',' ',' ',' ','#',
-            '#',' ','Z',' ',' ',' ',' ',' ','#',
-            '#','W',' ','M',' ','Z',' ',' ','#',
-            '#',' ',' ','S','L',' ','Z',' ','#',
-            '#',' ',' ',' ',' ','Z',' ','S','#',
-            '#','#','D','#',' ',' ',' ',' ','#',
-            '#','P','L','d',' ',' ',' ',' ','#',
+            '#','3',' ',' ',' ',' ',' ','2','#',
+            '#',' ',' ','#',' ','#',' ',' ','#',
+            '#','Z',' ',' ',' ',' ','Z',' ','#',
+            '#',' ',' ','#',' ','#',' ','#','#',
+            '#',' ',' ',' ',' ','Z',' ','Z','#',
+            '#','#','D','#',' ',' ',' ','Z','#',
+            '#','P',' ','d','4',' ',' ',' ','#',
             '#','#','#','#','#','#','#','#','#',
     };
 
     const u8 testMap2[] = {
             '#','#','#','#','#','#','#','#','#','#',
-            '#','L','P','#','M','#','S','Z',' ','#',
-            '#','M','#','#',' ','#',' ','#','S','#',
-            '#','S',' ','Z',' ',' ','M','#','L','#',
+            '#',' ','P','#','M','#',' ',' ',' ','#',
+            '#','D','#','#',' ','#',' ','#',' ','#',
+            '#',' ','4',' ',' ',' ',' ','#',' ','#',
             '#','#','#','#','#','#','#','#',' ','#',
-            '#','S',' ',' ',' ','S','L','#','M','D',
-            '#',' ','#','S','#','#',' ','#',' ','#',
-            '#','Z',' ','L','W','#','W',' ','Z','#',
+            '#',' ',' ',' ',' ',' ',' ','#',' ','#',
+            '#','4','#',' ','#','#',' ','#',' ','#',
+            '#','Z',' ',' ','W','#',' ','d','4','#',
             '#','#','#',' ','#','#','#','#','#','#',
-            '#',' ','#',' ','#',' ',' ',' ',' ','#',
-            '#',' ','Z',' ','L','M',' ','S',' ','#',
-            '#',' ',' ','I',' ',' ','Z',' ',' ','#',
-            '#','W',' ','M',' ','W','I','M',' ','#',
-            '#',' ',' ','S','L',' ','I',' ',' ','#',
-            '#',' ','Z',' ','Z','Z',' ','S',' ','#',
-            '#',' ','I',' ','Z','Z','W',' ',' ','#',
-            '#','L',' ','S','L',' ',' ','L',' ','#',
+            '#',' ','#','D','#',' ',' ',' ',' ','#',
+            '#',' ',' ',' ',' ',' ',' ',' ',' ','#',
+            '#',' ',' ',' ',' ',' ',' ',' ',' ','#',
+            '#',' ',' ',' ',' ',' ',' ','Z',' ','#',
+            '#',' ','M','#',' ',' ','#','Z',' ','#',
+            '#',' ',' ',' ',' ',' ',' ',' ',' ','#',
+            '#',' ',' ','Z',' ','7',' ',' ',' ','#',
+            '#',' ',' ',' ',' ',' ',' ',' ',' ','#',
             '#','#','#','#','#','#','#','#','#','#',
     };
 
@@ -80,6 +82,7 @@ namespace Game {
         createMapping(Input::MappingType::Action, INPUT_ACTION_RIGHT, Input::RawEventType::Keyboard, SDLK_d);
         createMapping(Input::MappingType::Action, INPUT_ACTION_TURN_LEFT, Input::RawEventType::Keyboard, SDLK_q);
         createMapping(Input::MappingType::Action, INPUT_ACTION_TURN_RIGHT, Input::RawEventType::Keyboard, SDLK_e);
+        createMapping(Input::MappingType::Action, INPUT_ACTION_TOGGLE_FPS, Input::RawEventType::Keyboard, SDLK_F1);
         createMapping(Input::MappingType::Action, INPUT_ACTION_TOGGLE_FREECAM, Input::RawEventType::Keyboard, SDLK_F4);
     }
 
@@ -129,6 +132,7 @@ namespace Game {
                     if(!game.level.freeCam) TurnRight(game.level, *game.levelRenderer.camera);
                     break;
                 case INPUT_ACTION_TOGGLE_FPS:
+                    game.debugFlag = !game.debugFlag;
                     break;
                 case INPUT_ACTION_TOGGLE_FREECAM:
                     game.level.freeCam = !game.level.freeCam;
@@ -173,32 +177,18 @@ namespace Game {
         }
     }
 
-    void InitGame(Game& game) {
-        setupInputMappings();
-        setupInputContext(game);
-        CreateFont(game.font, "assets/fonts/OpenSans-Semibold.ttf", 32);
-        game.quitFlag = false;
-
-        /*
-        FloatRect widthInsets(0.25f, 0, 0.25f, 0);
-        game.animId = CreateAnimation(game.animation, 32, 48, 10, "assets/sprites/player_walk.png", &widthInsets);
-        LoadAnimations(game.animation);
-        game.controllerId = PlayAnimation(game.animation, game.animId, RepeatType::Restart, false);
-        PlayAnimation(game.animation, game.animId, RepeatType::Once, false);
-        */
-        //game.levelRenderer = std::make_unique<Renderer::LevelRenderer>();
-        InitLevelRenderer(game.levelRenderer);
+    static void createTestMap1(Game &game) {
         u32 torchModel = LoadModel(game.levelRenderer, "assets/models/torch2.obj", "assets/models/torch2.png");
-        u32 barrelModel = LoadModel(game.levelRenderer, "assets/models/barrel.obj", "assets/models/barrel.png");
+        u32 barrelModel = LoadModel(
+            game.levelRenderer,
+            "assets/models/big_barrel.obj",
+            "assets/models/big_barrel.png",
+            "assets/models/big_barrel_n.png",
+            "assets/models/big_barrel_s.png"
+        );
         u32 benchModel = LoadModel(game.levelRenderer, "assets/models/bench.obj", "assets/models/bench.png");
-
-        CreateMonsterBluePrint(game.level, 'M', 'N', "assets/goblin", 50, 64, 2.5f);
-        CreateMonsterBluePrint(game.level, 'Z', 'N', "assets/zombie", 59, 95, 2.25f);
-        CreateMonsterBluePrint(game.level, 'W', 'N', "assets/dog", 96, 74, 2.0f);
-        CreateObjectBluePrint(game.level, 'S', '*', "assets/skeleton", 64, 22, 1.0f);
-        CreateObjectBluePrint(game.level, 'I', '*', "assets/pillar", 50, 128, 3.0f);
-        //LoadLevel(game.level, game.levelRenderer, testMap2, 10, 18);
         LoadLevel(game.level, game.levelRenderer, testMap1, 9, 9);
+
         CreateModelInstance(game.level, 1, 1, CubeSide::WEST, 1.0f, torchModel);
         CreateModelInstance(game.level, 1, 1, CubeSide::NORTH, 1.0f, torchModel);
         CreateModelInstance(game.level, 1, 2, CubeSide::WEST, 1.0f, torchModel);
@@ -210,66 +200,151 @@ namespace Game {
         CreateModelInstance(game.level, 7, 7, CubeSide::EAST, 1.0f, torchModel);
         CreateModelInstance(game.level, 4, 6, CubeSide::WEST, 1.0f, torchModel);
 
-        CreateModelInstance(game.level, 1, 1, CubeSide::BOTTOM, 1.0f, barrelModel);
-        CreateModelInstance(game.level, 4, 6, CubeSide::BOTTOM, 1.0f, barrelModel);
+        CreateModelInstance(game.level, 1, 2, CubeSide::BOTTOM, 1.0f, barrelModel);
+        CreateModelInstance(game.level, 6, 6, CubeSide::BOTTOM, 1.0f, barrelModel);
         CreateModelInstance(game.level, 5, 4, CubeSide::BOTTOM, 1.0f, barrelModel);
-        CreateModelInstance(game.level, 7, 2, CubeSide::BOTTOM, 1.0f, barrelModel);
+        CreateModelInstance(game.level, 4, 3, CubeSide::BOTTOM, 1.0f, barrelModel);
         CreateModelInstance(game.level, 1, 5, CubeSide::BOTTOM, 1.0f, barrelModel);
+        CreateModelInstance(game.level, 7, 3, CubeSide::BOTTOM, 1.0f, barrelModel);
 
         CreateModelInstance(game.level, 3, 1, CubeSide::NORTH, 1.0f, benchModel);
         CreateModelInstance(game.level, 2, 1, CubeSide::NORTH, 1.0f, torchModel);
         CreateModelInstance(game.level, 4, 1, CubeSide::NORTH, 1.0f, torchModel);
         CreateModelInstance(game.level, 5, 1, CubeSide::NORTH, 1.0f, benchModel);
         CreateModelInstance(game.level, 7, 1, CubeSide::EAST, 1.0f, benchModel);
+        CreateModelInstance(game.level, 7, 5, CubeSide::EAST, 1.0f, benchModel);
+        CreateModelInstance(game.level, 7, 6, CubeSide::EAST, 1.0f, benchModel);
+    }
 
+    static void createTestMap2(Game &game) {
+        u32 torchModel = LoadModel(game.levelRenderer, "assets/models/torch2.obj", "assets/models/torch2.png");
+        u32 barrelModel = LoadModel(game.levelRenderer, "assets/models/barrel.obj", "assets/models/barrel.png");
+        u32 benchModel = LoadModel(game.levelRenderer, "assets/models/bench.obj", "assets/models/bench.png");
+        LoadLevel(game.level, game.levelRenderer, testMap2, 10, 18);
+        CreateModelInstance(game.level, 1, 1, CubeSide::WEST, 1.0f, torchModel);
+        CreateModelInstance(game.level, 1, 3, CubeSide::WEST, 1.0f, benchModel);
+
+        CreateModelInstance(game.level, 2, 3, CubeSide::SOUTH, 1.0f, torchModel);
+        CreateModelInstance(game.level, 4, 2, CubeSide::EAST, 1.0f, benchModel);
+        CreateModelInstance(game.level, 4, 2, CubeSide::WEST, 1.0f, benchModel);
+
+        CreateModelInstance(game.level, 6, 2, CubeSide::EAST, 1.0f, benchModel);
+        CreateModelInstance(game.level, 6, 3, CubeSide::BOTTOM, 1.0f, barrelModel);
+
+        CreateModelInstance(game.level, 8, 3, CubeSide::WEST, 1.0f, benchModel);
+        CreateModelInstance(game.level, 8, 5, CubeSide::WEST, 1.0f, benchModel);
+
+        CreateModelInstance(game.level, 8, 7, CubeSide::SOUTH, 1.0f, torchModel);
+
+        CreateModelInstance(game.level, 2, 16, CubeSide::SOUTH, 1.0f, benchModel);
+        CreateModelInstance(game.level, 3, 16, CubeSide::BOTTOM, 1.0f, barrelModel);
+        CreateModelInstance(game.level, 3, 14, CubeSide::BOTTOM, 1.0f, barrelModel);
+        CreateModelInstance(game.level, 6, 14, CubeSide::BOTTOM, 1.0f, barrelModel);
+        CreateModelInstance(game.level, 4, 16, CubeSide::SOUTH, 1.0f, benchModel);
+        CreateModelInstance(game.level, 5, 16, CubeSide::SOUTH, 1.0f, benchModel);
+        CreateModelInstance(game.level, 6, 16, CubeSide::SOUTH, 1.0f, benchModel);
+        CreateModelInstance(game.level, 7, 17, CubeSide::BOTTOM, 1.0f, barrelModel);
+        CreateModelInstance(game.level, 8, 15, CubeSide::EAST, 1.0f, benchModel);
+        CreateModelInstance(game.level, 8, 11, CubeSide::EAST, 1.0f, benchModel);
+        CreateModelInstance(game.level, 8, 13, CubeSide::BOTTOM, 1.0f, barrelModel);
+        CreateModelInstance(game.level, 4, 13, CubeSide::WEST, 1.0f, benchModel);
+        CreateModelInstance(game.level, 5, 13, CubeSide::EAST, 1.0f, benchModel);
+        CreateModelInstance(game.level, 4, 13, CubeSide::BOTTOM, 1.0f, barrelModel);
+        CreateModelInstance(game.level, 5, 10, CubeSide::BOTTOM, 1.0f, barrelModel);
+        CreateModelInstance(game.level, 4, 10, CubeSide::NORTH, 1.0f, benchModel);
+        CreateModelInstance(game.level, 2, 10, CubeSide::NORTH, 1.0f, benchModel);
+    }
+
+    void InitGame(Game& game) {
+        setupInputMappings();
+        setupInputContext(game);
+        CreateFont(game.font, "assets/fonts/OpenSans-Semibold.ttf", 32);
+        game.quitFlag = false;
+        game.debugFlag = false;
+
+        /*
+        FloatRect widthInsets(0.25f, 0, 0.25f, 0);
+        game.animId = CreateAnimation(game.animation, 32, 48, 10, "assets/sprites/player_walk.png", &widthInsets);
+        LoadAnimations(game.animation);
+        game.controllerId = PlayAnimation(game.animation, game.animId, RepeatType::Restart, false);
+        PlayAnimation(game.animation, game.animId, RepeatType::Once, false);
+        */
+        //game.levelRenderer = std::make_unique<Renderer::LevelRenderer>();
+        InitLevelRenderer(game.levelRenderer);
+
+
+        CreateMonsterBluePrint(game.level, 'M', 'N', "assets/goblin", 50, 64, 2.5f);
+        CreateMonsterBluePrint(game.level, 'Z', 'N', "assets/zombie", 59, 95, 2.25f);
+        CreateMonsterBluePrint(game.level, 'W', 'N', "assets/dog", 96, 74, 2.0f);
+        CreateObjectBluePrint(game.level, 'S', '*', "assets/skeleton", 64, 22, 1.0f);
+        CreateObjectBluePrint(game.level, 'I', '*', "assets/pillar", 50, 128, 3.0f);
+
+        createTestMap1(game);
+    }
+
+    static void showDebugOverlay(Game& game, bool* p_open, float frameDelta) {
+        float fps = 1.0f / frameDelta;
+        static int location = 0;
+        ImGuiIO& io = ImGui::GetIO();
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+        if (location >= 0)
+        {
+            const float PAD = 10.0f;
+            const ImGuiViewport* viewport = ImGui::GetMainViewport();
+            ImVec2 work_pos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
+            ImVec2 work_size = viewport->WorkSize;
+            ImVec2 window_pos, window_pos_pivot;
+            window_pos.x = (location & 1) ? (work_pos.x + work_size.x - PAD) : (work_pos.x + PAD);
+            window_pos.y = (location & 2) ? (work_pos.y + work_size.y - PAD) : (work_pos.y + PAD);
+            window_pos_pivot.x = (location & 1) ? 1.0f : 0.0f;
+            window_pos_pivot.y = (location & 2) ? 1.0f : 0.0f;
+            ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+            window_flags |= ImGuiWindowFlags_NoMove;
+        }
+        else if (location == -2)
+        {
+            // Center window
+            ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+            window_flags |= ImGuiWindowFlags_NoMove;
+        }
+        ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+        if (ImGui::Begin("DebugWindow", p_open, window_flags))
+        {
+            ImGui::Text("FPS: %.2f\nCells rendered: %d\nCamera pos: %.2f,%.2f,%.2f\n",
+                        fps,
+                        game.levelRenderer.cellsRendered,
+                        game.levelRenderer.camera->Position.x,
+                        game.levelRenderer.camera->Position.y,
+                        game.levelRenderer.camera->Position.z
+            );
+
+            ImGui::Separator();
+            if (ImGui::IsMousePosValid())
+                ImGui::Text("Mouse Position: (%.1f,%.1f)", io.MousePos.x, io.MousePos.y);
+            else
+                ImGui::Text("Mouse Position: <invalid>");
+            if (ImGui::BeginPopupContextWindow())
+            {
+                if (ImGui::MenuItem("Top-left",     NULL, location == 0)) location = 0;
+                if (ImGui::MenuItem("Top-right",    NULL, location == 1)) location = 1;
+                if (ImGui::MenuItem("Bottom-left",  NULL, location == 2)) location = 2;
+                if (ImGui::MenuItem("Bottom-right", NULL, location == 3)) location = 3;
+                if (p_open && ImGui::MenuItem("Close")) *p_open = false;
+                ImGui::EndPopup();
+            }
+        }
+        ImGui::End();
     }
 
     void UpdateGame(Game& game, float frameDelta) {
         handleMouseInput(game);
         handleInput(game, frameDelta);
-
         UpdateLevel(game.level, game.levelRenderer, frameDelta);
         UpdateLevelRenderer(game.levelRenderer, frameDelta);
         RenderLevel(game.levelRenderer, frameDelta);
-
-        /*
-        UpdateAnimations(game.animation, frameDelta);
-        Clear(game.renderer->renderBuffer);
-        PushText(game.renderer->renderBuffer, "Hello World", game.font, 100, 100, Renderer::WHITE);
-        auto matrix = glm::identity<glm::mat4>();
-        matrix = glm::translate(matrix, glm::vec3(550, 250, 0));
-        static float angle = 0.0f;
-        matrix = glm::rotate(matrix, angle, glm::vec3(0, 0, 1));
-        angle += (float) frameDelta;
-        matrix = glm::translate(matrix, glm::vec3(-550, -250, 0));
-        PushTransform(game.renderer->renderBuffer, matrix);
-
-        PushBlendMode(game.renderer->renderBuffer, Renderer::BlendMode::ALPHA);
-
-        auto col = Renderer::BLUE;
-        col.a = 0.25f;
-
-        Renderer::Quad q = { .color = col, .left = 500, .top = 200, .right = 600, .bottom = 300 };
-        PushQuad(game.renderer->renderBuffer, q);
-
-        PushBlendMode(game.renderer->renderBuffer, Renderer::BlendMode::ALPHA);
-
-        matrix = glm::identity<glm::mat4>();
-        PushTransform(game.renderer->renderBuffer, matrix);
-
-        //RenderScene(game.scene, game.renderer->renderBuffer, frameDelta);
-
-        matrix = glm::identity<glm::mat4>();
-        matrix = glm::translate(matrix, glm::vec3(500, 500, 0));
-        matrix = glm::scale(matrix, glm::vec3(4.0f, 4.0f, 0.0f));
-        matrix = glm::translate(matrix, glm::vec3(-500, -500, 0));
-        PushTransform(game.renderer->renderBuffer, matrix);
-        RenderAnimation(game.animation, game.controllerId, game.renderer->renderBuffer, 500, 500);
-        PushTransform(game.renderer->renderBuffer, glm::identity<glm::mat4>());
-
-        //PushLine(game.renderer->renderBuffer, Vector2(0, 0), Vector2(100, 100), Renderer::YELLOW);
-        UpdateRenderer(*game.renderer, frameDelta);
-         */
+        if(game.debugFlag) {
+            showDebugOverlay(game, &game.debugFlag, frameDelta);
+        }
     }
     
     void ShutdownGame(Game& game) {

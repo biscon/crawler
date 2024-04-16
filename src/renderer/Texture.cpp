@@ -4,6 +4,7 @@
 
 #include <stdexcept>
 #include <memory>
+#include <SDL_log.h>
 #include "Texture.h"
 
 extern "C" {
@@ -11,6 +12,14 @@ extern "C" {
 }
 
 namespace Renderer {
+    static void checkErrors() {
+        GLenum err;
+        // check for errors
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            SDL_Log("Texture GL error: %d", err);
+        }
+    }
+
     static i32 getGLInternalFormat(TextureFormatInternal format) {
         switch(format) {
             case TextureFormatInternal::R8: return GL_R8;
@@ -34,6 +43,7 @@ namespace Renderer {
     u32 CreateTexture() {
         u32 id;
         glGenTextures(1, &id);
+        checkErrors();
         return id;
     }
 
@@ -48,6 +58,12 @@ namespace Renderer {
     void UnbindTexture() {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
+    static void setAnisotrophy() {
+        float aniso = 16.0f;
+        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &aniso);
+        //aniso = 8.0f;
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, aniso);
+    }
 
     void SetFilteringTexture(uint32_t textureId, TextureFiltering filtering) {
         BindTexture(textureId);
@@ -60,6 +76,16 @@ namespace Renderer {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                 break;
+            case TextureFiltering::NEAREST_MIPMAP:
+                setAnisotrophy();
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                break;
+            case TextureFiltering::LINEAR_MIPMAP:
+                setAnisotrophy();
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                break;
         }
     }
 
@@ -69,7 +95,7 @@ namespace Renderer {
                      w, h, 0, getGLFormat(format), GL_UNSIGNED_BYTE, (const void*) data);
         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
+        checkErrors();
     }
 
     void LoadTextureFromPng(u32 textureId, const std::string &filename, bool padding) {
@@ -89,5 +115,6 @@ namespace Renderer {
     void GenerateTextureMipmaps(u32 textureId) {
         glBindTexture(GL_TEXTURE_2D, textureId);
         glGenerateMipmap(GL_TEXTURE_2D);
+        checkErrors();
     }
 } // Renderer

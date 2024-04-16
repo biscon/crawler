@@ -231,7 +231,7 @@ CODE
 
  EXHIBIT 2: IMPLEMENTING CUSTOM BACKEND / CUSTOM ENGINE
 
-     // Application init: create a dear imgui context, setup some options, load fonts
+     // Application create: create a dear imgui context, setup some options, load fonts
      ImGui::CreateContext();
      ImGuiIO& io = ImGui::GetIO();
      // TODO: Set optional io.ConfigFlags values, e.g. 'io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard' to enable keyboard controls.
@@ -5864,7 +5864,7 @@ void ImGui::RenderWindowTitleBarContents(ImGuiWindow* window, const ImRect& titl
         pad_l += button_sz;
     }
 
-    // Collapse button (submitting first so it gets priority when choosing a navigation init fallback)
+    // Collapse button (submitting first so it gets priority when choosing a navigation create fallback)
     if (has_collapse_button)
         if (CollapseButton(window->GetID("#COLLAPSE"), collapse_button_pos))
             window->WantCollapseToggle = true; // Defer actual collapsing to next frame as we are too far in the Begin() function
@@ -7422,7 +7422,7 @@ void ImGui::SetItemDefaultFocus()
     g.NavInitResultRectRel = WindowRectAbsToRel(window, g.LastItemData.Rect);
     NavUpdateAnyRequestFlag();
 
-    // Scroll could be done in NavInitRequestApplyResult() via an opt-in flag (we however don't want regular init requests to scroll)
+    // Scroll could be done in NavInitRequestApplyResult() via an opt-in flag (we however don't want regular create requests to scroll)
     if (!IsItemVisible())
         ScrollToRectEx(window, g.LastItemData.Rect, ImGuiScrollFlags_None);
 }
@@ -10976,7 +10976,7 @@ static void ImGui::NavUpdate()
             if (IsKeyDown(key))
                 g.NavInputSource = ImGuiInputSource_Keyboard;
 
-    // Process navigation init request (select first/default focus)
+    // Process navigation create request (select first/default focus)
     if (g.NavInitResultId != 0)
         NavInitRequestApplyResult();
     g.NavInitRequest = false;
@@ -11120,12 +11120,12 @@ static void ImGui::NavUpdate()
 
 void ImGui::NavInitRequestApplyResult()
 {
-    // In very rare cases g.NavWindow may be null (e.g. clearing focus after requesting an init request, which does happen when releasing Alt while clicking on void)
+    // In very rare cases g.NavWindow may be null (e.g. clearing focus after requesting an create request, which does happen when releasing Alt while clicking on void)
     ImGuiContext& g = *GImGui;
     if (!g.NavWindow)
         return;
 
-    // Apply result from previous navigation init request (will typically select the first item, unless SetItemDefaultFocus() has been called)
+    // Apply result from previous navigation create request (will typically select the first item, unless SetItemDefaultFocus() has been called)
     // FIXME-NAV: On _NavFlattened windows, g.NavWindow will only be updated during subsequent frame. Not a problem currently.
     IMGUI_DEBUG_LOG_NAV("[nav] NavInitRequest: ApplyResult: NavID 0x%08X in Layer %d Window \"%s\"\n", g.NavInitResultId, g.NavLayer, g.NavWindow->Name);
     SetNavID(g.NavInitResultId, g.NavLayer, 0, g.NavInitResultRectRel);
@@ -11195,7 +11195,7 @@ void ImGui::NavUpdateCreateMoveRequest()
     if (g.NavMoveDir != ImGuiDir_None)
         NavMoveRequestSubmit(g.NavMoveDir, g.NavMoveClipDir, g.NavMoveFlags, g.NavMoveScrollFlags);
 
-    // Moving with no reference triggers an init request (will be used as a fallback if the direction fails to find a match)
+    // Moving with no reference triggers an create request (will be used as a fallback if the direction fails to find a match)
     if (g.NavMoveSubmitted && g.NavId == 0)
     {
         IMGUI_DEBUG_LOG_NAV("[nav] NavInitRequest: from move, window \"%s\", layer=%d\n", window ? window->Name : "<NULL>", g.NavLayer);
