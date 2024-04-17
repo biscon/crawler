@@ -22,6 +22,12 @@ namespace Renderer {
     } ShaderUniforms;
 
     void InitLevelRenderer(LevelRenderer &r) {
+        r.settings.FOV = 60.0f;
+        r.settings.shadowsEnabled = true;
+        r.settings.headTilt = 3.0f;
+        r.settings.normalMapping = true;
+        r.settings.specularMapping = true;
+
         r.camera = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 0.0f));
         SDL_Log("Compiling geometry shader");
         r.geometryShader = std::make_unique<ShaderProgram>("shaders/geometry_vertex.glsl",
@@ -62,23 +68,23 @@ namespace Renderer {
         r.shadowFbo4->Init(SHADOW_MAP_SIZE);
 
         r.wallDiffuseMaps.create(512, 512, 3);
-        r.wallDiffuseMaps.uploadLayer("assets/brick_wall.png", WALL);
-        r.wallDiffuseMaps.uploadLayer("assets/floor.png", FLOOR);
-        r.wallDiffuseMaps.uploadLayer("assets/floor.png", CEILING);
+        r.wallDiffuseMaps.uploadLayer("assets/walls/brick_wall.png", WALL);
+        r.wallDiffuseMaps.uploadLayer("assets/walls/dungeon_brick.png", FLOOR);
+        r.wallDiffuseMaps.uploadLayer("assets/walls/stone_ceiling.png", CEILING);
         r.wallDiffuseMaps.setFilteringTexture(TextureFiltering::LINEAR_MIPMAP);
         r.wallDiffuseMaps.generateMipmaps();
 
         r.wallNormalMaps.create(512, 512, 3);
-        r.wallNormalMaps.uploadLayer("assets/brick_wall_n.png", WALL);
-        r.wallNormalMaps.uploadLayer("assets/floor_n.png", FLOOR);
-        r.wallNormalMaps.uploadLayer("assets/floor_n.png", CEILING);
+        r.wallNormalMaps.uploadLayer("assets/walls/brick_wall_n.png", WALL);
+        r.wallNormalMaps.uploadLayer("assets/walls/dungeon_brick_n.png", FLOOR);
+        r.wallNormalMaps.uploadLayer("assets/walls/stone_ceiling_n.png", CEILING);
         r.wallNormalMaps.setFilteringTexture(TextureFiltering::LINEAR_MIPMAP);
         r.wallNormalMaps.generateMipmaps();
 
         r.wallSpecularMaps.create(512, 512, 3);
-        r.wallSpecularMaps.uploadLayer("assets/brick_wall_s.png", WALL);
-        r.wallSpecularMaps.uploadLayer("assets/floor_s.png", FLOOR);
-        r.wallSpecularMaps.uploadLayer("assets/floor_s.png", CEILING);
+        r.wallSpecularMaps.uploadLayer("assets/walls/brick_wall_s.png", WALL);
+        r.wallSpecularMaps.uploadLayer("assets/walls/dungeon_brick_s.png", FLOOR);
+        r.wallSpecularMaps.uploadLayer("assets/walls/stone_ceiling_s.png", CEILING);
         r.wallSpecularMaps.setFilteringTexture(TextureFiltering::NEAREST_MIPMAP);
         r.wallSpecularMaps.generateMipmaps();
 
@@ -155,8 +161,10 @@ namespace Renderer {
             r.modelShader->setMat4("model", model);
         }
         if(!renderShadows) {
-            r.modelShader->setInt("material.hasNormalMap", m.hasNormalMap ? 1 : 0);
-            r.modelShader->setInt("material.hasSpecularMap", m.hasSpecularMap ? 1 : 0);
+            bool normalMap = m.hasNormalMap && r.settings.normalMapping;
+            bool specularMap = m.hasSpecularMap && r.settings.specularMapping;
+            r.modelShader->setInt("material.hasNormalMap", normalMap ? 1 : 0);
+            r.modelShader->setInt("material.hasSpecularMap", specularMap ? 1 : 0);
             glActiveTexture(GL_TEXTURE0);
             BindTexture(m.diffuseMapId);
 
@@ -405,14 +413,16 @@ namespace Renderer {
         glCullFace(GL_BACK);
         assignRenderLights(r);
 
-        if(r.renderLights.size() > 0)
-            RenderLevelShadows(r, r.renderLights[0], *r.shadowFbo1);
-        if(r.renderLights.size() > 1)
-            RenderLevelShadows(r, r.renderLights[1], *r.shadowFbo2);
-        if(r.renderLights.size() > 2)
-            RenderLevelShadows(r, r.renderLights[2], *r.shadowFbo3);
-        if(r.renderLights.size() > 3)
-            RenderLevelShadows(r, r.renderLights[3], *r.shadowFbo4);
+        if(r.settings.shadowsEnabled) {
+            if (r.renderLights.size() > 0)
+                RenderLevelShadows(r, r.renderLights[0], *r.shadowFbo1);
+            if (r.renderLights.size() > 1)
+                RenderLevelShadows(r, r.renderLights[1], *r.shadowFbo2);
+            if (r.renderLights.size() > 2)
+                RenderLevelShadows(r, r.renderLights[2], *r.shadowFbo3);
+            if (r.renderLights.size() > 3)
+                RenderLevelShadows(r, r.renderLights[3], *r.shadowFbo4);
+        }
         SetViewport();
 
         //BindFrameBuffer(r.fbo);
@@ -427,8 +437,7 @@ namespace Renderer {
         glm::mat4 projection    = glm::mat4(1.0f);
 
         // pitch the camera down a bit
-        float pitch = 4.0f;
-        r.camera->Pitch -= pitch;
+        r.camera->Pitch -= r.settings.headTilt;
         auto oldCamPos = r.camera->Position;
         // move the camera back a bit and up
         r.camera->Position -= r.camera->Front * 1.45f;
@@ -439,15 +448,15 @@ namespace Renderer {
         glm::vec3 camDir = (camPos + r.camera->Front);
         glm::vec3 camUp = r.camera->Up;
         r.camera->Position = oldCamPos;
-        r.camera->Pitch += pitch;
+        r.camera->Pitch += r.settings.headTilt;
         r.camera->updateCameraVectors();
 
 
         auto viewPort = GetViewport();
         // update the view frustum
-        r.frustum.setCamInternals(55.0f, (float) viewPort.screenWidth / (float) viewPort.screenHeight, 0.5f, 100.0f);
+        r.frustum.setCamInternals(r.settings.FOV, (float) viewPort.screenWidth / (float) viewPort.screenHeight, 0.5f, 100.0f);
         r.frustum.setCamDef(camPos, camDir, camUp);
-        projection = glm::perspective(glm::radians(55.0f), (float) viewPort.screenWidth / (float) viewPort.screenHeight, 0.5f, 100.0f);
+        projection = glm::perspective(glm::radians(r.settings.FOV), (float) viewPort.screenWidth / (float) viewPort.screenHeight, 0.5f, 100.0f);
         //projection = glm::perspective(glm::radians(75.0f), (float) 1920 / (float) 1080, 0.1f, 100.0f);
 
         // Setup geometry shader
@@ -459,7 +468,7 @@ namespace Renderer {
         r.geometryShader->setFloat("FogDensity", 0.10f);
         r.geometryShader->setVec3("FogColor", glm::vec3(0.00f, 0.00f, 0.00f));
         r.geometryShader->setInt("FogEnabled", 0);
-        r.geometryShader->setInt("ShadowEnabled", 1);
+        r.geometryShader->setInt("ShadowEnabled", r.settings.shadowsEnabled ? 1 : 0);
         r.geometryShader->setFloat("FarPlane", 100.0f);
 
         // Setup sprite shader
@@ -485,7 +494,7 @@ namespace Renderer {
         r.modelShader->setFloat("FogDensity", 0.10f);
         r.modelShader->setVec3("FogColor", glm::vec3(0.00f, 0.00f, 0.00f));
         r.modelShader->setInt("FogEnabled", 0);
-        r.modelShader->setInt("ShadowEnabled", 1);
+        r.modelShader->setInt("ShadowEnabled", r.settings.shadowsEnabled ? 1 : 0);
         r.modelShader->setFloat("FarPlane", 100.0f);
 
         // render batches
@@ -504,8 +513,8 @@ namespace Renderer {
                     r.geometryShader->setInt("material.normalMap", 1);
                     r.geometryShader->setInt("material.specularMap", 2);
                     r.geometryShader->setFloat("material.shininess", 20.0f);
-                    r.geometryShader->setInt("material.hasNormalMap", 1);
-                    r.geometryShader->setInt("material.hasSpecularMap", 1);
+                    r.geometryShader->setInt("material.hasNormalMap", r.settings.normalMapping ? 1 : 0);
+                    r.geometryShader->setInt("material.hasSpecularMap", r.settings.specularMapping ? 1 : 0);
                     setShaderLights(r, *r.geometryShader);
                     // bind diffuse map
                     r.wallDiffuseMaps.bind(GL_TEXTURE0);
@@ -539,6 +548,7 @@ namespace Renderer {
                     r.spriteShader->setInt("material.diffuse", 0);
                     r.spriteShader->setFloat("material.shininess", 8.0f);
                     r.spriteShader->setInt("material.hasNormalMap", 0);
+                    r.spriteShader->setInt("material.hasSpecularMap", 0);
                     setShaderLights(r, *r.spriteShader);
                     //SDL_Log("Rendering sprite batch");
                     glActiveTexture(GL_TEXTURE0);

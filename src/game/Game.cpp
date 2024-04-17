@@ -178,7 +178,13 @@ namespace Game {
     }
 
     static void createTestMap1(Game &game) {
-        u32 torchModel = LoadModel(game.levelRenderer, "assets/models/torch2.obj", "assets/models/torch2.png");
+        u32 torchModel = LoadModel(
+                game.levelRenderer,
+                "assets/models/torch.obj",
+                "assets/models/torch.png",
+                "assets/models/torch_n.png",
+                "assets/models/torch_s.png"
+        );
         u32 barrelModel = LoadModel(
             game.levelRenderer,
             "assets/models/big_barrel.obj",
@@ -186,7 +192,13 @@ namespace Game {
             "assets/models/big_barrel_n.png",
             "assets/models/big_barrel_s.png"
         );
-        u32 benchModel = LoadModel(game.levelRenderer, "assets/models/bench.obj", "assets/models/bench.png");
+        u32 benchModel = LoadModel(
+                game.levelRenderer,
+                "assets/models/bench.obj",
+                "assets/models/bench.png",
+                "assets/models/bench_n.png",
+                "assets/models/bench_s.png"
+        );
         LoadLevel(game.level, game.levelRenderer, testMap1, 9, 9);
 
         CreateModelInstance(game.level, 1, 1, CubeSide::WEST, 1.0f, torchModel);
@@ -217,9 +229,27 @@ namespace Game {
     }
 
     static void createTestMap2(Game &game) {
-        u32 torchModel = LoadModel(game.levelRenderer, "assets/models/torch2.obj", "assets/models/torch2.png");
-        u32 barrelModel = LoadModel(game.levelRenderer, "assets/models/barrel.obj", "assets/models/barrel.png");
-        u32 benchModel = LoadModel(game.levelRenderer, "assets/models/bench.obj", "assets/models/bench.png");
+        u32 torchModel = LoadModel(
+                game.levelRenderer,
+                "assets/models/torch.obj",
+                "assets/models/torch.png",
+                "assets/models/torch_n.png",
+                "assets/models/torch_s.png"
+        );
+        u32 barrelModel = LoadModel(
+                game.levelRenderer,
+                "assets/models/big_barrel.obj",
+                "assets/models/big_barrel.png",
+                "assets/models/big_barrel_n.png",
+                "assets/models/big_barrel_s.png"
+        );
+        u32 benchModel = LoadModel(
+                game.levelRenderer,
+                "assets/models/bench.obj",
+                "assets/models/bench.png",
+                "assets/models/bench_n.png",
+                "assets/models/bench_s.png"
+        );
         LoadLevel(game.level, game.levelRenderer, testMap2, 10, 18);
         CreateModelInstance(game.level, 1, 1, CubeSide::WEST, 1.0f, torchModel);
         CreateModelInstance(game.level, 1, 3, CubeSide::WEST, 1.0f, benchModel);
@@ -279,7 +309,7 @@ namespace Game {
         CreateObjectBluePrint(game.level, 'S', '*', "assets/skeleton", 64, 22, 1.0f);
         CreateObjectBluePrint(game.level, 'I', '*', "assets/pillar", 50, 128, 3.0f);
 
-        createTestMap1(game);
+        createTestMap2(game);
     }
 
     static void showDebugOverlay(Game& game, bool* p_open, float frameDelta) {

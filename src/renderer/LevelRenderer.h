@@ -89,7 +89,16 @@ namespace Renderer {
         glm::vec3 rotation;
     };
 
+    struct RenderSettings {
+        float FOV;
+        bool shadowsEnabled;
+        float headTilt;
+        bool normalMapping;
+        bool specularMapping;
+    };
+
     struct LevelRenderer {
+        RenderSettings settings;
         ViewFrustum frustum;
         std::unique_ptr<ShaderProgram> geometryShader;
         std::unique_ptr<VertexBuffer> geometryVbo;
