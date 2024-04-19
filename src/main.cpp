@@ -170,8 +170,8 @@ INTERNAL bool InitVideo()
     //SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     //SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     // request 4x MSAA
-    //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
+    //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
     SDLWindow = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, (i32) ScreenWidth, (i32) ScreenHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE );
     if(SDLWindow == nullptr)
     {

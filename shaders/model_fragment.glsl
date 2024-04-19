@@ -59,6 +59,7 @@ uniform int FogEnabled;
 
 uniform float FarPlane;
 uniform int ShadowEnabled;
+uniform sampler2D depthBufferTexture;
 
 float shadowBias = 0.015;
 
@@ -77,10 +78,8 @@ vec3 CalcBumpedNormal()
     return normal;
 }
 
-void main()
+void shade()
 {
-    //FragColor = texture(material.diffuse, TexCoord);
-    //return;
     float gamma = 2.2;
     float alpha = texture(material.diffuse, TexCoord).a;
     corrected = pow(texture(material.diffuse, TexCoord).rgb, vec3(gamma));
@@ -121,6 +120,22 @@ void main()
 
     // apply gamma correction
     FragColor = vec4(pow(result, vec3(1.0/gamma)), alpha);
+}
+
+void main()
+{
+    //FragColor = texture(material.diffuse, TexCoord);
+    //return;
+    vec2 screenCoords = gl_FragCoord.xy / vec2(textureSize(depthBufferTexture, 0));
+    float depthValue = texture(depthBufferTexture, screenCoords).r;
+    float currentDepth = gl_FragCoord.z - 0.0001;
+
+    //float depthValue = texture(depthBufferTexture, vec2(gl_FragCoord.xy)).r;
+    if (currentDepth <= depthValue) {
+        shade();
+    } else {
+        discard;
+    }
 }
 
 vec3 CalcAmbientLight() {

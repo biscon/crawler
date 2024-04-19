@@ -15,6 +15,17 @@ extern "C" {
 
 namespace Renderer {
 
+    const float screenQuadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+            // positions   // texCoords
+            -1.0f, 1.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f,
+            1.0f, -1.0f, 1.0f, 0.0f,
+
+            -1.0f, 1.0f, 0.0f, 1.0f,
+            1.0f, -1.0f, 1.0f, 0.0f,
+            1.0f, 1.0f, 1.0f, 1.0f
+    };
+
     struct {
         const std::string model = "model";
         const std::string view = "view";
@@ -27,6 +38,12 @@ namespace Renderer {
         r.settings.headTilt = 3.0f;
         r.settings.normalMapping = true;
         r.settings.specularMapping = true;
+        r.settings.SSAO = true;
+        r.settings.shadowMapSize = 256;
+        r.settings.renderWidth = 1920;
+        r.settings.renderHeight = 1080;
+
+        r.gpuFrameTimer = std::make_unique<GPUTimerQuery>();
 
         r.camera = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 0.0f));
         SDL_Log("Compiling geometry shader");
@@ -48,43 +65,57 @@ namespace Renderer {
         r.shadowShader = std::make_unique<ShaderProgram>("shaders/shadow_vertex.glsl",
                                                         "shaders/shadow_fragment.glsl");
 
-        // fbo for later use
+        SDL_Log("Compiling depth shader");
+        r.depthShader = std::make_unique<ShaderProgram>("shaders/depth_vertex.glsl",
+                                                         "shaders/depth_fragment.glsl");
+
+        r.screenShader = std::make_unique<ShaderProgram>("shaders/screen_vertex.glsl",
+                                                         "shaders/screen_fragment.glsl");
+
+
         auto vp = GetViewport();
         auto width = (i32) vp.screenWidth;
         auto height = (i32) vp.screenHeight;
+
+        // depth buffer fbo
+        r.depthBufferFbo = std::make_unique<DepthBufferFBO>();
+        r.depthBufferFbo->init(r.settings.renderWidth, r.settings.renderHeight);
+
+        // fbo for later use
+
         r.fboTexture = CreateTexture();
-        SetFilteringTexture(r.fboTexture, TextureFiltering::LINEAR);
-        UploadTexture(r.fboTexture, width, height, nullptr, TextureFormatInternal::RGBA8, TextureFormatData::RGBA);
-        r.fbo = CreateFrameBuffer(r.fboTexture, TextureFormatInternal::RGBA8, TextureFormatData::RGBA, width, height);
+        SetFilteringTexture(r.fboTexture, TextureFiltering::NEAREST);
+        UploadTexture(r.fboTexture, r.settings.renderWidth, r.settings.renderHeight, nullptr, TextureFormatInternal::RGBA8, TextureFormatData::RGBA);
+        r.fbo = CreateFrameBuffer(r.fboTexture, TextureFormatInternal::RGBA8, TextureFormatData::RGBA, r.settings.renderWidth, r.settings.renderHeight);
 
         // shadow fbo
         r.shadowFbo1 = std::make_unique<ShadowCubeMapFBO>();
-        r.shadowFbo1->Init(SHADOW_MAP_SIZE);
+        r.shadowFbo1->init(r.settings.shadowMapSize);
         r.shadowFbo2 = std::make_unique<ShadowCubeMapFBO>();
-        r.shadowFbo2->Init(SHADOW_MAP_SIZE);
+        r.shadowFbo2->init(r.settings.shadowMapSize);
         r.shadowFbo3 = std::make_unique<ShadowCubeMapFBO>();
-        r.shadowFbo3->Init(SHADOW_MAP_SIZE);
+        r.shadowFbo3->init(r.settings.shadowMapSize);
         r.shadowFbo4 = std::make_unique<ShadowCubeMapFBO>();
-        r.shadowFbo4->Init(SHADOW_MAP_SIZE);
+        r.shadowFbo4->init(r.settings.shadowMapSize);
 
-        r.wallDiffuseMaps.create(512, 512, 3);
-        r.wallDiffuseMaps.uploadLayer("assets/walls/brick_wall.png", WALL);
-        r.wallDiffuseMaps.uploadLayer("assets/walls/dungeon_brick.png", FLOOR);
-        r.wallDiffuseMaps.uploadLayer("assets/walls/stone_ceiling.png", CEILING);
-        r.wallDiffuseMaps.setFilteringTexture(TextureFiltering::LINEAR_MIPMAP);
+        r.wallDiffuseMaps.create(64, 64, 3);
+        r.wallDiffuseMaps.uploadLayer("assets/walls/brick_wall2.png", WALL);
+        r.wallDiffuseMaps.uploadLayer("assets/walls/wood_floor.png", FLOOR);
+        r.wallDiffuseMaps.uploadLayer("assets/walls/wood_floor.png", CEILING);
+        r.wallDiffuseMaps.setFilteringTexture(TextureFiltering::NEAREST_MIPMAP);
         r.wallDiffuseMaps.generateMipmaps();
 
-        r.wallNormalMaps.create(512, 512, 3);
-        r.wallNormalMaps.uploadLayer("assets/walls/brick_wall_n.png", WALL);
-        r.wallNormalMaps.uploadLayer("assets/walls/dungeon_brick_n.png", FLOOR);
-        r.wallNormalMaps.uploadLayer("assets/walls/stone_ceiling_n.png", CEILING);
-        r.wallNormalMaps.setFilteringTexture(TextureFiltering::LINEAR_MIPMAP);
+        r.wallNormalMaps.create(64, 64, 3);
+        r.wallNormalMaps.uploadLayer("assets/walls/brick_wall2_n.png", WALL);
+        r.wallNormalMaps.uploadLayer("assets/walls/wood_floor_n.png", FLOOR);
+        r.wallNormalMaps.uploadLayer("assets/walls/wood_floor_n.png", CEILING);
+        r.wallNormalMaps.setFilteringTexture(TextureFiltering::NEAREST_MIPMAP);
         r.wallNormalMaps.generateMipmaps();
 
-        r.wallSpecularMaps.create(512, 512, 3);
-        r.wallSpecularMaps.uploadLayer("assets/walls/brick_wall_s.png", WALL);
-        r.wallSpecularMaps.uploadLayer("assets/walls/dungeon_brick_s.png", FLOOR);
-        r.wallSpecularMaps.uploadLayer("assets/walls/stone_ceiling_s.png", CEILING);
+        r.wallSpecularMaps.create(64, 64, 3);
+        r.wallSpecularMaps.uploadLayer("assets/walls/brick_wall2_s.png", WALL);
+        r.wallSpecularMaps.uploadLayer("assets/walls/wood_floor_s.png", FLOOR);
+        r.wallSpecularMaps.uploadLayer("assets/walls/wood_floor_s.png", CEILING);
         r.wallSpecularMaps.setFilteringTexture(TextureFiltering::NEAREST_MIPMAP);
         r.wallSpecularMaps.generateMipmaps();
 
@@ -102,7 +133,19 @@ namespace Renderer {
         spriteAttrs.add(1, 2, VertexAttributeType::Float); // tex coords
         r.spriteVbo = std::make_unique<VertexBuffer>(spriteAttrs);
 
-        r.doorModelIndex = LoadModel(r, "assets/models/door_frame.obj", "assets/models/door_frame.png");
+        // setup offscreen rendering VertexBuffer
+        VertexAttributes attrs;
+        attrs.add(0, 2, VertexAttributeType::Float); // position
+        attrs.add(1, 2, VertexAttributeType::Float); // tex coords
+        r.screenVbo = std::make_unique<VertexBuffer>(attrs);
+        r.screenVbo->allocate((void *) &screenQuadVertices, sizeof(screenQuadVertices),
+                                     VertexAccessType::STATIC);
+
+        // setup SSAO
+        r.ssao = std::make_unique<SSAO>();
+        r.ssao->init(width, height);
+
+        r.doorModelIndex = LoadModel(r, "assets/models/door_frame2.obj", "assets/models/door_frame.png");
     }
 
     void ShutdownLevelRenderer(LevelRenderer &renderer) {
@@ -110,7 +153,7 @@ namespace Renderer {
         DestroyFrameBuffer(renderer.fbo);
     }
 
-    static void renderModel(LevelRenderer &r, RenderBatch& batch, bool renderShadows = false) {
+    static void renderModel(LevelRenderer &r, RenderBatch& batch, bool renderShadows, ShaderProgram& shader) {
         float halfSize = CUBE_SIZE / 2.0f;
         glm::mat4 model = glm::mat4(1.0f);
         // set world pos
@@ -155,16 +198,12 @@ namespace Renderer {
 
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_TRUE); // Enable depth buffer writing
-        if(renderShadows) {
-            r.shadowShader->setMat4("model", model);
-        } else {
-            r.modelShader->setMat4("model", model);
-        }
+        shader.setMat4("model", model);
         if(!renderShadows) {
             bool normalMap = m.hasNormalMap && r.settings.normalMapping;
             bool specularMap = m.hasSpecularMap && r.settings.specularMapping;
-            r.modelShader->setInt("material.hasNormalMap", normalMap ? 1 : 0);
-            r.modelShader->setInt("material.hasSpecularMap", specularMap ? 1 : 0);
+            shader.setInt("material.hasNormalMap", normalMap ? 1 : 0);
+            shader.setInt("material.hasSpecularMap", specularMap ? 1 : 0);
             glActiveTexture(GL_TEXTURE0);
             BindTexture(m.diffuseMapId);
 
@@ -177,11 +216,14 @@ namespace Renderer {
                 BindTexture(m.specularMapId);
             }
 
+            // bind depth buffer
+            r.depthBufferFbo->bindForReading(GL_TEXTURE6);
+
             // bind shadow cube map
-            r.shadowFbo1->BindForReading(GL_TEXTURE7);
-            r.shadowFbo2->BindForReading(GL_TEXTURE8);
-            r.shadowFbo3->BindForReading(GL_TEXTURE9);
-            r.shadowFbo4->BindForReading(GL_TEXTURE10);
+            r.shadowFbo1->bindForReading(GL_TEXTURE7);
+            r.shadowFbo2->bindForReading(GL_TEXTURE8);
+            r.shadowFbo3->bindForReading(GL_TEXTURE9);
+            r.shadowFbo4->bindForReading(GL_TEXTURE10);
         }
         m.vbo->bind();
         if(batch.modelObjName == "*") {
@@ -262,7 +304,7 @@ namespace Renderer {
         glDepthMask(GL_TRUE); // Enable depth buffer writing
 
         for (u32 i = 0 ; i < 6 ; i++) {
-            fbo.BindForWriting(gCameraDirections[i].CubemapFace);
+            fbo.bindForWriting(gCameraDirections[i].CubemapFace);
             glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
             view = glm::lookAt(light.position, light.position + gCameraDirections[i].Target, gCameraDirections[i].Up);
             projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
@@ -271,8 +313,11 @@ namespace Renderer {
             r.shadowShader->setMat4("projection", projection);
             r.shadowShader->setFloat("FarPlane", 100.0f);
 
+            r.geometryVbo->bind();
+            glDrawArrays(GL_TRIANGLES, (i32) 0, (i32) r.geometryMesh.size());
+            r.geometryVbo->unbind();
             // render batches
-
+            /*
             for(auto &batch : r.batches) {
                 switch(batch.type) {
                     case BatchType::GEOMETRY: {
@@ -285,10 +330,11 @@ namespace Renderer {
                     }
                 }
             }
+             */
             for(auto &batch : r.batches) {
                 switch(batch.type) {
                     case BatchType::MODEL: {
-                        renderModel(r, batch, true);
+                        renderModel(r, batch, true, *r.shadowShader);
                         break;
                     }
                 }
@@ -406,12 +452,84 @@ namespace Renderer {
         //return r.frustum.pointInFrustum(position);
     }
 
+    void RenderDepthPrePass(LevelRenderer &r) {
+        // create matrices
+        glm::mat4 model         = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+        glm::mat4 view          = glm::mat4(1.0f);
+        glm::mat4 projection    = glm::mat4(1.0f);
+
+        r.depthShader->use();
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+
+        r.depthBufferFbo->bindForWriting();
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+
+        // pitch the camera down a bit
+        r.camera->Pitch -= r.settings.headTilt;
+        auto oldCamPos = r.camera->Position;
+        // move the camera back a bit and up
+        r.camera->Position -= r.camera->Front * 1.45f;
+        r.camera->updateCameraVectors();
+
+        view = r.camera->GetViewMatrix();
+        glm::vec3 camPos = r.camera->Position;
+        glm::vec3 camDir = (camPos + r.camera->Front);
+        glm::vec3 camUp = r.camera->Up;
+        r.camera->Position = oldCamPos;
+        r.camera->Pitch += r.settings.headTilt;
+        r.camera->updateCameraVectors();
+
+        auto viewPort = GetViewport();
+        // update the view frustum
+        r.frustum.setCamInternals(r.settings.FOV, (float) viewPort.screenWidth / (float) viewPort.screenHeight, 0.5f, 100.0f);
+        r.frustum.setCamDef(camPos, camDir, camUp);
+        projection = glm::perspective(glm::radians(r.settings.FOV), (float) viewPort.screenWidth / (float) viewPort.screenHeight, 0.5f, 100.0f);
+
+        r.depthShader->setMat4("model", model);
+        r.depthShader->setMat4("view", view);
+        r.depthShader->setMat4("projection", projection);
+
+        // render batches
+        for(auto &batch : r.batches) {
+            switch(batch.type) {
+                case BatchType::GEOMETRY: {
+                    if(!isGeometryInFrustum(r, batch.position)) {
+                        continue;
+                    }
+                    r.geometryVbo->bind();
+                    glDrawArrays(GL_TRIANGLES, (i32) batch.offset, (i32) batch.count);
+                    r.geometryVbo->unbind();
+                    break;
+                }
+            }
+        }
+        for(auto &batch : r.batches) {
+            switch(batch.type) {
+                case BatchType::MODEL: {
+                    renderModel(r, batch, true, *r.depthShader);
+                    break;
+                }
+            }
+        }
+        // Restore color writes
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    }
+
+
     void RenderLevel(LevelRenderer &r, float delta) {
+        r.gpuFrameTimer->start();
         r.cellsRendered = 0;
         glEnable(GL_CULL_FACE);
         glFrontFace(GL_CCW);
         glCullFace(GL_BACK);
         assignRenderLights(r);
+
+        RenderDepthPrePass(r);
 
         if(r.settings.shadowsEnabled) {
             if (r.renderLights.size() > 0)
@@ -423,14 +541,14 @@ namespace Renderer {
             if (r.renderLights.size() > 3)
                 RenderLevelShadows(r, r.renderLights[3], *r.shadowFbo4);
         }
-        SetViewport();
-
-        //BindFrameBuffer(r.fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, r.settings.renderWidth, r.settings.renderHeight);
+        BindFrameBuffer(r.fbo);
+        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glEnable(GL_DEPTH_TEST);
         //glDisable(GL_CULL_FACE);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
         // create transformations
         glm::mat4 model         = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
         glm::mat4 view          = glm::mat4(1.0f);
@@ -457,7 +575,6 @@ namespace Renderer {
         r.frustum.setCamInternals(r.settings.FOV, (float) viewPort.screenWidth / (float) viewPort.screenHeight, 0.5f, 100.0f);
         r.frustum.setCamDef(camPos, camDir, camUp);
         projection = glm::perspective(glm::radians(r.settings.FOV), (float) viewPort.screenWidth / (float) viewPort.screenHeight, 0.5f, 100.0f);
-        //projection = glm::perspective(glm::radians(75.0f), (float) 1920 / (float) 1080, 0.1f, 100.0f);
 
         // Setup geometry shader
         r.geometryShader->use();
@@ -470,6 +587,8 @@ namespace Renderer {
         r.geometryShader->setInt("FogEnabled", 0);
         r.geometryShader->setInt("ShadowEnabled", r.settings.shadowsEnabled ? 1 : 0);
         r.geometryShader->setFloat("FarPlane", 100.0f);
+        r.geometryShader->setInt("depthBufferTexture", 6);
+        
 
         // Setup sprite shader
         r.spriteShader->use();
@@ -496,6 +615,7 @@ namespace Renderer {
         r.modelShader->setInt("FogEnabled", 0);
         r.modelShader->setInt("ShadowEnabled", r.settings.shadowsEnabled ? 1 : 0);
         r.modelShader->setFloat("FarPlane", 100.0f);
+        r.modelShader->setInt("depthBufferTexture", 6);
 
         // render batches
         for(auto &batch : r.batches) {
@@ -522,11 +642,14 @@ namespace Renderer {
                     r.wallNormalMaps.bind(GL_TEXTURE1);
                     // bind specular map
                     r.wallSpecularMaps.bind(GL_TEXTURE2);
+
+                    // bind depth buffer
+                    r.depthBufferFbo->bindForReading(GL_TEXTURE6);
                     // bind shadow cube map
-                    r.shadowFbo1->BindForReading(GL_TEXTURE7);
-                    r.shadowFbo2->BindForReading(GL_TEXTURE8);
-                    r.shadowFbo3->BindForReading(GL_TEXTURE9);
-                    r.shadowFbo4->BindForReading(GL_TEXTURE10);
+                    r.shadowFbo1->bindForReading(GL_TEXTURE7);
+                    r.shadowFbo2->bindForReading(GL_TEXTURE8);
+                    r.shadowFbo3->bindForReading(GL_TEXTURE9);
+                    r.shadowFbo4->bindForReading(GL_TEXTURE10);
 
                     r.geometryVbo->bind();
                     glDrawArrays(GL_TRIANGLES, (i32) batch.offset, (i32) batch.count);
@@ -536,7 +659,7 @@ namespace Renderer {
                 }
                 case BatchType::SPRITE: {
                     //glDepthMask(GL_FALSE); // Disable depth buffer writing
-                    glDisable(GL_DEPTH_TEST);
+                    glEnable(GL_DEPTH_TEST);
                     // enable blending
                     glEnable(GL_BLEND);
                     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -554,10 +677,10 @@ namespace Renderer {
                     glActiveTexture(GL_TEXTURE0);
                     BindTexture(r.spriteTextureAtlas.textureId);
                     // bind shadow cube map
-                    r.shadowFbo1->BindForReading(GL_TEXTURE7);
-                    r.shadowFbo2->BindForReading(GL_TEXTURE8);
-                    r.shadowFbo3->BindForReading(GL_TEXTURE9);
-                    r.shadowFbo4->BindForReading(GL_TEXTURE10);
+                    r.shadowFbo1->bindForReading(GL_TEXTURE7);
+                    r.shadowFbo2->bindForReading(GL_TEXTURE8);
+                    r.shadowFbo3->bindForReading(GL_TEXTURE9);
+                    r.shadowFbo4->bindForReading(GL_TEXTURE10);
 
                     r.spriteVbo->bind();
                     glDrawArrays(GL_TRIANGLES, (i32) batch.offset, (i32) batch.count);
@@ -576,28 +699,32 @@ namespace Renderer {
                     r.modelShader->setInt("material.normalMap", 1);
                     r.modelShader->setInt("material.specularMap", 2);
                     setShaderLights(r, *r.modelShader);
-                    renderModel(r, batch);
+                    renderModel(r, batch, false, *r.modelShader);
                     break;
                 }
             }
         }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        // render to screen
+        SetViewport();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        r.screenShader->use();
+        r.screenShader->setInt("screenTexture", 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, r.fboTexture);
+        r.screenVbo->bind();
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        r.screenVbo->unbind();
+
         //SDL_Log("Rendered %d geometry batches", geometryCount);
         //SDL_Log("Rendered %d batches", (i32) r.batches.size());
-
-        /*
-        glActiveTexture(GL_TEXTURE0);
-        BindTexture(r.geometryTextureAtlas.diffuseMapId);
-        r.geometryVbo->bind();
-        glDrawArrays(GL_TRIANGLES, 0, (i32) r.geometryMesh.size());
-        r.geometryVbo->unbind();
-        UnbindTexture();
-        */
+        r.gpuFrameTimer->stop();
     }
 
     void UploadLevelMesh(LevelRenderer &r) {
         calculateGeometryTangents(r.geometryMesh);
-        r.geometryVbo->allocate(r.geometryMesh.data(), r.geometryMesh.size() * 12 * sizeof(float), VertexAccessType::STATIC);
-        r.spriteVbo->allocate(r.spriteMesh.data(), r.spriteMesh.size() * 5 * sizeof(float), VertexAccessType::STATIC);
+        r.geometryVbo->allocate(r.geometryMesh.data(), r.geometryMesh.size() * 12 * sizeof(float), VertexAccessType::DYNAMIC);
+        r.spriteVbo->allocate(r.spriteMesh.data(), r.spriteMesh.size() * 5 * sizeof(float), VertexAccessType::DYNAMIC);
     }
 
     void UpdateLevelRenderer(LevelRenderer &r, float delta) {

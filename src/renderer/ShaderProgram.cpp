@@ -158,6 +158,9 @@ namespace Renderer {
     void ShaderProgram::setMat4(const std::string &name, const glm::mat4 &mat) {
         glUniformMatrix4fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, &mat[0][0]);
     }
+    void ShaderProgram::setVec3Array(const std::string &name, const glm::vec3 *values, u32 count) {
+        glUniform3fv(glGetUniformLocation(id, name.c_str()), count, &values[0][0]);
+    }
 }
 
 

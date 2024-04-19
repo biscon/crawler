@@ -102,8 +102,8 @@ set(ENGINE_SOURCE_FILES
         src/renderer/Camera.h
         src/renderer/Model.cpp
         src/renderer/Model.h
-        src/renderer/ShadowMapping.cpp
-        src/renderer/ShadowMapping.h
+        src/renderer/ShadowCubeMapFBO.cpp
+        src/renderer/ShadowCubeMapFBO.h
         src/renderer/frustum/AABox.h
         src/renderer/frustum/AABox.cpp
         src/renderer/frustum/Plane.h
@@ -112,6 +112,12 @@ set(ENGINE_SOURCE_FILES
         src/renderer/frustum/Vec3.cpp
         src/renderer/frustum/ViewFrustum.h
         src/renderer/frustum/ViewFrustum.cpp
+        src/renderer/DepthBufferFBO.h
+        src/renderer/DepthBufferFBO.cpp
+        src/renderer/GPUTimerQuery.cpp
+        src/renderer/GPUTimerQuery.h
+        src/renderer/SSAO.cpp
+        src/renderer/SSAO.h
 )
 
 set(GAME_SOURCE_FILES

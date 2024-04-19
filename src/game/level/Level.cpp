@@ -269,9 +269,15 @@ namespace Game {
                 }
             }
         }
-        //SDL_Log("Camera at %f, %f, %f\n", r.camera->Position.x, r.camera->Position.y, r.camera->Position.z);
-        //r.lights[0].position = r.camera->Position;
-        //r.lights[0].position.y = 1.25f;
+        // add player light
+        /*
+        Renderer::Light playerLight{};
+        playerLight.level = 2;
+        playerLight.position = r.camera->Position;
+        playerLight.shadowEnabled = false;
+        GetLightByLevel(playerLight, playerLight.level);
+        r.lights.push_back(playerLight);
+        */
 
         // add monsters
         for(auto& m : l.monsters) {

@@ -37,6 +37,8 @@ namespace Renderer {
         void setMat3(const std::string &name, const glm::mat3 &mat);
         void setMat4(const std::string &name, const glm::mat4 &mat);
 
+        void setVec3Array(const std::string &name, const glm::vec3 *values, u32 count);
+
     private:
         u32 id = 0;
         std::unordered_map<std::string, i32> uniforms;

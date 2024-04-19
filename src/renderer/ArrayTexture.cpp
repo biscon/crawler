@@ -37,7 +37,7 @@ namespace Renderer {
 
     void ArrayTexture::uploadLayer(const std::string& filename, i32 layer) {
         auto pb = std::make_unique<PixelBuffer>(filename.c_str(), false);
-        pb->verticalFlip();
+        //pb->verticalFlip();
         uploadLayer(*pb, layer);
     }
 

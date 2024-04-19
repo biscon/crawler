@@ -42,6 +42,15 @@ struct SpotLight {
     int enabled;
 };
 
+struct SSAO {
+    int enabled;
+    sampler2D texNoise;
+    vec3 samples[64];
+    int kernelSize;
+    float radius;
+    float bias;
+};
+
 #define NR_POINT_LIGHTS 8
 
 in vec3 FragPos;
@@ -59,15 +68,16 @@ uniform int FogEnabled;
 
 uniform float FarPlane;
 uniform int ShadowEnabled;
+uniform sampler2D depthBufferTexture;
 
 float shadowBias = 0.015;
-
 vec3 corrected;
 
 // function prototypes
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 CalcAmbientLight();
+
 
 vec3 CalcBumpedNormal()
 {
@@ -76,11 +86,7 @@ vec3 CalcBumpedNormal()
     normal = normalize(TBN * normal);
     return normal;
 }
-
-void main()
-{
-    //FragColor = texture(material.diffuse, TexCoord);
-    //return;
+void shade() {
     float gamma = 2.2;
     float alpha = texture(material.diffuse, TexCoord).a;
     corrected = pow(texture(material.diffuse, TexCoord).rgb, vec3(gamma));
@@ -121,6 +127,21 @@ void main()
 
     // apply gamma correction
     FragColor = vec4(pow(result, vec3(1.0/gamma)), alpha);
+}
+
+void main()
+{
+    //FragColor = texture(material.diffuse, TexCoord);
+    //return;
+    vec2 screenCoords = gl_FragCoord.xy / vec2(textureSize(depthBufferTexture, 0));
+    float depthValue = texture(depthBufferTexture, screenCoords).r;
+    float currentDepth = gl_FragCoord.z - 0.0001;
+
+    if (currentDepth <= depthValue) {
+        shade();
+    } else {
+        discard;
+    }
 }
 
 vec3 CalcAmbientLight() {

@@ -38,7 +38,7 @@ namespace Game {
 
     const u8 testMap2[] = {
             '#','#','#','#','#','#','#','#','#','#',
-            '#',' ','P','#','M','#',' ',' ',' ','#',
+            '#',' ',' ','#','M','#',' ',' ',' ','#',
             '#','D','#','#',' ','#',' ','#',' ','#',
             '#',' ','4',' ',' ',' ',' ','#',' ','#',
             '#','#','#','#','#','#','#','#',' ','#',
@@ -48,12 +48,12 @@ namespace Game {
             '#','#','#',' ','#','#','#','#','#','#',
             '#',' ','#','D','#',' ',' ',' ',' ','#',
             '#',' ',' ',' ',' ',' ',' ',' ',' ','#',
-            '#',' ',' ',' ',' ',' ',' ',' ',' ','#',
-            '#',' ',' ',' ',' ',' ',' ','Z',' ','#',
-            '#',' ','M','#',' ',' ','#','Z',' ','#',
-            '#',' ',' ',' ',' ',' ',' ',' ',' ','#',
-            '#',' ',' ','Z',' ','7',' ',' ',' ','#',
-            '#',' ',' ',' ',' ',' ',' ',' ',' ','#',
+            '#',' ',' ',' ',' ',' ',' ','Z','Z','#',
+            '#',' ',' ',' ','P',' ',' ','Z','Z','#',
+            '#',' ','M','#',' ',' ','#','Z','Z','#',
+            '#',' ',' ',' ',' ',' ',' ','Z','Z','#',
+            '#',' ',' ','Z',' ','7',' ','Z','Z','#',
+            '#',' ',' ',' ',' ',' ',' ','Z','Z','#',
             '#','#','#','#','#','#','#','#','#','#',
     };
 
@@ -340,12 +340,13 @@ namespace Game {
         ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
         if (ImGui::Begin("DebugWindow", p_open, window_flags))
         {
-            ImGui::Text("FPS: %.2f\nCells rendered: %d\nCamera pos: %.2f,%.2f,%.2f\n",
+            ImGui::Text("FPS: %.2f\nCells rendered: %d\nCamera pos: %.2f,%.2f,%.2f\nGPU Frame Time: %.2f ms",
                         fps,
                         game.levelRenderer.cellsRendered,
                         game.levelRenderer.camera->Position.x,
                         game.levelRenderer.camera->Position.y,
-                        game.levelRenderer.camera->Position.z
+                        game.levelRenderer.camera->Position.z,
+                        game.levelRenderer.gpuFrameTimer->getElapsedTime()
             );
 
             ImGui::Separator();

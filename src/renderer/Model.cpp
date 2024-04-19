@@ -246,14 +246,14 @@ namespace Renderer {
     void LoadDiffuseMap(Model &model, const std::string &filename) {
         model.diffuseMapId = CreateTexture();
         LoadTextureFromPng(model.diffuseMapId, filename, false);
-        SetFilteringTexture(model.diffuseMapId, TextureFiltering::LINEAR_MIPMAP);
+        SetFilteringTexture(model.diffuseMapId, TextureFiltering::NEAREST_MIPMAP);
         GenerateTextureMipmaps(model.diffuseMapId);
     }
 
     void LoadNormalMap(Model &model, const std::string &filename) {
         model.normalMapId = CreateTexture();
         LoadTextureFromPng(model.normalMapId, filename, false);
-        SetFilteringTexture(model.normalMapId, TextureFiltering::LINEAR_MIPMAP);
+        SetFilteringTexture(model.normalMapId, TextureFiltering::NEAREST_MIPMAP);
         GenerateTextureMipmaps(model.normalMapId);
         model.hasNormalMap = true;
     }

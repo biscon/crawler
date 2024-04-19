@@ -12,12 +12,14 @@
 #include "TextureAtlas.h"
 #include "Camera.h"
 #include "Model.h"
-#include "ShadowMapping.h"
+#include "ShadowCubeMapFBO.h"
 #include "frustum/ViewFrustum.h"
 #include "ArrayTexture.h"
+#include "DepthBufferFBO.h"
+#include "GPUTimerQuery.h"
+#include "SSAO.h"
 
 #define CUBE_SIZE 3.0f
-#define SHADOW_MAP_SIZE 1024
 
 namespace Renderer {
     enum CubeSide { NORTH, SOUTH, WEST, EAST, TOP, BOTTOM, CENTER};
@@ -92,9 +94,13 @@ namespace Renderer {
     struct RenderSettings {
         float FOV;
         bool shadowsEnabled;
+        u32 shadowMapSize;
         float headTilt;
         bool normalMapping;
         bool specularMapping;
+        bool SSAO;
+        i32 renderWidth;
+        i32 renderHeight;
     };
 
     struct LevelRenderer {
@@ -111,11 +117,17 @@ namespace Renderer {
 
         std::unique_ptr<ShaderProgram> modelShader;
 
+        std::unique_ptr<ShaderProgram> screenShader;
+        std::unique_ptr<VertexBuffer> screenVbo;
+
         std::unique_ptr<ShaderProgram> shadowShader;
         std::unique_ptr<ShadowCubeMapFBO> shadowFbo1;
         std::unique_ptr<ShadowCubeMapFBO> shadowFbo2;
         std::unique_ptr<ShadowCubeMapFBO> shadowFbo3;
         std::unique_ptr<ShadowCubeMapFBO> shadowFbo4;
+
+        std::unique_ptr<ShaderProgram> depthShader;
+        std::unique_ptr<DepthBufferFBO> depthBufferFbo;
 
         u32 fbo;
         u32 fboTexture;
@@ -131,6 +143,9 @@ namespace Renderer {
         std::vector<RenderLight> renderLights;
         u32 doorModelIndex;
         u32 cellsRendered;
+        std::unique_ptr<GPUTimerQuery> gpuFrameTimer;
+        std::unique_ptr<SSAO> ssao;
+
     };
 
     void InitLevelRenderer(LevelRenderer& r);
