@@ -124,6 +124,12 @@ void shade() {
         // Blend the fragment color with the fog color based on the fog factor
         result = mix(FogColor, result, fogFactor);
     }
+    /*
+    float distance = FragPos.z - CameraPos.z;
+    float maxDistance = 9.0;
+    float fadeFactor = clamp(1.0 - distance / maxDistance, 0.0, 1.0); // Calculate alpha based on distance
+    result = fadeFactor * result;
+    */
 
     // apply gamma correction
     FragColor = vec4(pow(result, vec3(1.0/gamma)), alpha);
@@ -246,6 +252,7 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     // attenuation
     float distance = length(light.position - fragPos);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+
     // combine results
     vec3 ambient = light.ambient * corrected;
     vec3 diffuse = light.diffuse * diff * corrected;

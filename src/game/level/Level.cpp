@@ -270,14 +270,14 @@ namespace Game {
             }
         }
         // add player light
-        /*
+
         Renderer::Light playerLight{};
-        playerLight.level = 2;
+        playerLight.level = 4;
         playerLight.position = r.camera->Position;
-        playerLight.shadowEnabled = false;
+        playerLight.shadowEnabled = true;
         GetLightByLevel(playerLight, playerLight.level);
         r.lights.push_back(playerLight);
-        */
+
 
         // add monsters
         for(auto& m : l.monsters) {

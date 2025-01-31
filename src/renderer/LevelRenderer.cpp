@@ -39,7 +39,7 @@ namespace Renderer {
         r.settings.normalMapping = true;
         r.settings.specularMapping = true;
         r.settings.SSAO = true;
-        r.settings.shadowMapSize = 256;
+        r.settings.shadowMapSize = 512;
         r.settings.renderWidth = 1920;
         r.settings.renderHeight = 1080;
 
@@ -453,6 +453,7 @@ namespace Renderer {
     }
 
     void RenderDepthPrePass(LevelRenderer &r) {
+        glViewport(0, 0, r.settings.renderWidth, r.settings.renderHeight);
         // create matrices
         glm::mat4 model         = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
         glm::mat4 view          = glm::mat4(1.0f);
@@ -486,9 +487,9 @@ namespace Renderer {
 
         auto viewPort = GetViewport();
         // update the view frustum
-        r.frustum.setCamInternals(r.settings.FOV, (float) viewPort.screenWidth / (float) viewPort.screenHeight, 0.5f, 100.0f);
+        r.frustum.setCamInternals(r.settings.FOV, (float) r.settings.renderWidth / (float) r.settings.renderHeight, 0.5f, 100.0f);
         r.frustum.setCamDef(camPos, camDir, camUp);
-        projection = glm::perspective(glm::radians(r.settings.FOV), (float) viewPort.screenWidth / (float) viewPort.screenHeight, 0.5f, 100.0f);
+        projection = glm::perspective(glm::radians(r.settings.FOV), (float) r.settings.renderWidth / (float) r.settings.renderHeight, 0.5f, 100.0f);
 
         r.depthShader->setMat4("model", model);
         r.depthShader->setMat4("view", view);
@@ -572,9 +573,9 @@ namespace Renderer {
 
         auto viewPort = GetViewport();
         // update the view frustum
-        r.frustum.setCamInternals(r.settings.FOV, (float) viewPort.screenWidth / (float) viewPort.screenHeight, 0.5f, 100.0f);
+        r.frustum.setCamInternals(r.settings.FOV, (float) r.settings.renderWidth / (float) r.settings.renderHeight, 0.5f, 100.0f);
         r.frustum.setCamDef(camPos, camDir, camUp);
-        projection = glm::perspective(glm::radians(r.settings.FOV), (float) viewPort.screenWidth / (float) viewPort.screenHeight, 0.5f, 100.0f);
+        projection = glm::perspective(glm::radians(r.settings.FOV), (float) r.settings.renderWidth / (float) r.settings.renderHeight, 0.5f, 100.0f);
 
         // Setup geometry shader
         r.geometryShader->use();
@@ -582,7 +583,7 @@ namespace Renderer {
         r.geometryShader->setUniform(ShaderUniforms.view, view);
         r.geometryShader->setUniform(ShaderUniforms.proj, projection);
         r.geometryShader->setVec3("CameraPos", r.camera->Position);
-        r.geometryShader->setFloat("FogDensity", 0.10f);
+        r.geometryShader->setFloat("FogDensity", 0.15f);
         r.geometryShader->setVec3("FogColor", glm::vec3(0.00f, 0.00f, 0.00f));
         r.geometryShader->setInt("FogEnabled", 0);
         r.geometryShader->setInt("ShadowEnabled", r.settings.shadowsEnabled ? 1 : 0);
@@ -598,8 +599,8 @@ namespace Renderer {
         r.spriteShader->setVec3("CameraPos", r.camera->Position);
         r.spriteShader->setVec3("CameraRight", r.camera->Right);
         r.spriteShader->setVec3("CameraUp", r.camera->Up);
-        r.spriteShader->setFloat("FogDensity", 0.10f);
-        r.spriteShader->setVec3("FogColor", glm::vec3(0.005f, 0.005f, 0.005f));
+        r.spriteShader->setFloat("FogDensity", 0.15f);
+        r.spriteShader->setVec3("FogColor", glm::vec3(0.0f, 0.0f, 0.0));
         r.spriteShader->setInt("FogEnabled", 0);
         r.spriteShader->setInt("ShadowEnabled", 1);
         r.spriteShader->setFloat("FarPlane", 100.0f);
@@ -610,7 +611,7 @@ namespace Renderer {
         r.modelShader->setMat4("view", view);
         r.modelShader->setMat4("projection", projection);
         r.modelShader->setVec3("CameraPos", r.camera->Position);
-        r.modelShader->setFloat("FogDensity", 0.10f);
+        r.modelShader->setFloat("FogDensity", 0.15f);
         r.modelShader->setVec3("FogColor", glm::vec3(0.00f, 0.00f, 0.00f));
         r.modelShader->setInt("FogEnabled", 0);
         r.modelShader->setInt("ShadowEnabled", r.settings.shadowsEnabled ? 1 : 0);
